@@ -1,6 +1,7 @@
 /**
  * AETHERIA // Spatial Design & Creative Engineering Laboratory
- * High-Performance WebGL Engine, Custom Shaders & Dynamic Sound Synthesis
+ * High-Fidelity 3D WebGL Engine, Bespoke Shaders & Kinetic Soundscapes
+ * Optimized for Visual Comfort, 60 FPS Performance & Perfect Readability
  */
 
 (() => {
@@ -8,122 +9,101 @@
 
   // --- Engine State ---
   const state = {
-    mouse: { x: 0, y: 0, targetX: 0, targetY: 0, velX: 0, velY: 0 },
-    geometryType: 'knot', // 'knot', 'sphere', 'torus', 'icosa'
+    mouse: { x: 0, y: 0, targetX: 0, targetY: 0 },
+    geometryType: 'knot',
     shaderMode: 'prismatic',
-    turbulence: 1.2,
     audioActive: false,
-    particleDensity: 'hyper',
     isWarping: false
   };
 
-  // --- Real-time Clock ---
-  function updateClock() {
-    const el = document.getElementById('utc-clock');
-    if (el) {
-      const now = new Date();
-      el.textContent = `UTC ${now.toUTCString().split(' ')[4]}`;
-    }
-  }
-  setInterval(updateClock, 1000);
-  updateClock();
-
-  // --- Web Audio Polyphonic Ambient Synthesizer ---
+  // --- Web Audio Polyphonic Ambient Soundscape ---
   let audioCtx = null;
   let masterGain = null;
-  let padOsc1 = null;
-  let padOsc2 = null;
-  let padOsc3 = null;
   let filterNode = null;
+  let osc1 = null;
+  let osc2 = null;
 
-  function initSpatialAudio() {
+  function initAudio() {
     if (audioCtx) return;
     try {
       const AudioContext = window.AudioContext || window.webkitAudioContext;
       audioCtx = new AudioContext();
 
       masterGain = audioCtx.createGain();
-      masterGain.gain.setValueAtTime(0.045, audioCtx.currentTime);
+      masterGain.gain.setValueAtTime(0.04, audioCtx.currentTime);
       masterGain.connect(audioCtx.destination);
 
       filterNode = audioCtx.createBiquadFilter();
       filterNode.type = 'lowpass';
-      filterNode.frequency.setValueAtTime(450, audioCtx.currentTime);
+      filterNode.frequency.setValueAtTime(380, audioCtx.currentTime);
       filterNode.connect(masterGain);
 
-      // 3 Harmonic Oscillators creating an atmospheric chord (D minor / celestial 5th)
-      padOsc1 = audioCtx.createOscillator();
-      padOsc1.type = 'sine';
-      padOsc1.frequency.setValueAtTime(73.42, audioCtx.currentTime); // D2
+      // Deep harmonic ambient pad (D2 + A2 fifth)
+      osc1 = audioCtx.createOscillator();
+      osc1.type = 'sine';
+      osc1.frequency.setValueAtTime(73.42, audioCtx.currentTime); // D2
 
-      padOsc2 = audioCtx.createOscillator();
-      padOsc2.type = 'triangle';
-      padOsc2.frequency.setValueAtTime(110.0, audioCtx.currentTime); // A2
+      osc2 = audioCtx.createOscillator();
+      osc2.type = 'triangle';
+      osc2.frequency.setValueAtTime(110.0, audioCtx.currentTime); // A2
 
-      padOsc3 = audioCtx.createOscillator();
-      padOsc3.type = 'sine';
-      padOsc3.frequency.setValueAtTime(146.83, audioCtx.currentTime); // D3
+      osc1.connect(filterNode);
+      osc2.connect(filterNode);
 
-      padOsc1.connect(filterNode);
-      padOsc2.connect(filterNode);
-      padOsc3.connect(filterNode);
-
-      padOsc1.start();
-      padOsc2.start();
-      padOsc3.start();
+      osc1.start();
+      osc2.start();
     } catch (e) {
-      console.warn('Web Audio error:', e);
+      console.warn('AudioContext not supported:', e);
     }
   }
 
-  function triggerChime(freq = 587.33, duration = 1.4) {
+  function playChime(freq = 587.33) {
     if (!audioCtx || !state.audioActive) return;
     const osc = audioCtx.createOscillator();
-    const chimeGain = audioCtx.createGain();
-
+    const gain = audioCtx.createGain();
     osc.type = 'sine';
     osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
 
-    chimeGain.gain.setValueAtTime(0.09, audioCtx.currentTime);
-    chimeGain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + duration);
+    gain.gain.setValueAtTime(0.06, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 1.2);
 
-    osc.connect(chimeGain);
-    chimeGain.connect(audioCtx.destination);
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
     osc.start();
-    osc.stop(audioCtx.currentTime + duration);
+    osc.stop(audioCtx.currentTime + 1.2);
   }
 
   // --- Three.js WebGL Scene Architecture ---
   const container = document.getElementById('canvas-container');
   const scene = new THREE.Scene();
-  
+
   const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 100);
-  camera.position.set(0, 0, 7.5);
+  camera.position.set(0, 0, 7.2);
 
   const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'high-performance' });
   renderer.setSize(window.innerWidth, window.innerHeight);
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 1.25;
+  renderer.toneMappingExposure = 1.05;
   container.appendChild(renderer.domElement);
 
-  // --- Dynamic Volumetric Lighting ---
-  const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+  // --- Soft Atmospheric Lighting (Subtle, Non-glaring) ---
+  const ambientLight = new THREE.AmbientLight(0xffffff, 0.55);
   scene.add(ambientLight);
 
-  const keyLight = new THREE.PointLight(0x38bdf8, 3.5, 25);
-  keyLight.position.set(6, 5, 5);
+  const keyLight = new THREE.PointLight(0x38bdf8, 2.2, 25);
+  keyLight.position.set(6, 4, 4);
   scene.add(keyLight);
 
-  const fillLight = new THREE.PointLight(0xc084fc, 3.0, 25);
-  fillLight.position.set(-6, -4, 4);
+  const fillLight = new THREE.PointLight(0xa78bfa, 2.0, 25);
+  fillLight.position.set(-6, -3, 3);
   scene.add(fillLight);
 
-  const rimLight = new THREE.PointLight(0xf472b6, 2.5, 20);
-  rimLight.position.set(0, 6, -5);
+  const rimLight = new THREE.PointLight(0x34d399, 1.5, 20);
+  rimLight.position.set(0, 5, -4);
   scene.add(rimLight);
 
-  // --- Procedural Simplex Noise Vertex & Fragment Shader ---
+  // --- GLSL Shaders (Soft Pearlescent, Easy on the Eyes) ---
   const vertexShader = `
     uniform float uTime;
     uniform float uDistort;
@@ -185,33 +165,36 @@
     void main() {
       vUv = uv;
       vNormal = normalize(normalMatrix * normal);
-      
-      vec3 coords = normal * 1.8 + vec3(uTime * 0.4);
+
+      // Smooth organic wave (low-frequency, no harsh spikes)
+      vec3 coords = normal * 1.2 + vec3(uTime * 0.3);
       float noise = snoise(coords);
-      
-      float mouseInfluence = sin(dot(normal.xy, uMouse) * 3.14159) * 0.22;
-      float displacement = (noise * 0.38 + mouseInfluence) * uDistort;
+
+      float mouseInfluence = sin(dot(normal.xy, uMouse) * 3.1415) * 0.15;
+      float displacement = (noise * 0.28 + mouseInfluence) * uDistort;
       vDisplacement = displacement;
-      
-      vec3 newPos = position + normal * displacement;
-      vPosition = newPos;
-      gl_Position = projectionMatrix * modelViewMatrix * vec4(newPos, 1.0);
+
+      vec3 newPosition = position + normal * displacement;
+      vPosition = newPosition;
+      gl_Position = projectionMatrix * modelViewMatrix * vec4(newPosition, 1.0);
     }
   `;
 
   const fragmentShader = `
     uniform float uTime;
-    uniform int uMode; // 0: Prismatic, 1: Celestial Glass, 2: Cybernetic, 3: Vortex
+    uniform int uMode; // 0: Satin Pearl, 1: Icy Glass, 2: Cyber Wire, 3: Cosmic Core
     varying vec3 vNormal;
     varying vec3 vPosition;
     varying vec2 vUv;
     varying float vDisplacement;
 
-    vec3 palette(float t) {
-      vec3 a = vec3(0.5, 0.5, 0.5);
-      vec3 b = vec3(0.5, 0.5, 0.5);
-      vec3 c = vec3(1.0, 1.0, 1.0);
-      vec3 d = vec3(0.05, 0.33, 0.67);
+    // Soft, Elegant Cosine Color Palette (No Harsh Neon Clashing)
+    vec3 softPalette(float t) {
+      // Gentle pastel tones: lavender, soft cyan, muted champagne
+      vec3 a = vec3(0.35, 0.38, 0.45);
+      vec3 b = vec3(0.25, 0.25, 0.30);
+      vec3 c = vec3(0.8, 0.8, 0.8);
+      vec3 d = vec3(0.15, 0.40, 0.65);
       return a + b * cos(6.28318 * (c * t + d));
     }
 
@@ -219,44 +202,46 @@
       vec3 viewDir = normalize(-vPosition);
       float fresnel = dot(viewDir, vNormal);
       fresnel = clamp(1.0 - fresnel, 0.0, 1.0);
-      fresnel = pow(fresnel, 2.4);
+      fresnel = pow(fresnel, 2.8);
 
       if (uMode == 0) {
-        // Prismatic Core
-        float seed = fresnel * 1.2 + vDisplacement * 0.9 + uTime * 0.18;
-        vec3 spectral = palette(seed);
-        vec3 base = vec3(0.04, 0.04, 0.08);
-        vec3 col = mix(base, spectral, fresnel * 1.4 + 0.1);
-        col += vec3(0.6, 0.9, 1.0) * pow(fresnel, 4.5);
-        gl_FragColor = vec4(col, 0.94);
+        // --- 0: Satin Pearl (Comfortable Obsidian-Pearl with Soft Highlights) ---
+        float seed = fresnel * 0.9 + vDisplacement * 0.6 + uTime * 0.12;
+        vec3 spectralColor = softPalette(seed);
+        
+        // Deep velvety titanium base
+        vec3 base = vec3(0.06, 0.07, 0.11);
+        vec3 finalColor = mix(base, spectralColor, fresnel * 1.1 + 0.08);
+        finalColor += vec3(0.4, 0.7, 0.9) * pow(fresnel, 5.0) * 0.45; // Subtle soft sheen
+        gl_FragColor = vec4(finalColor, 0.92);
 
       } else if (uMode == 1) {
-        // Celestial Glass
-        vec3 glass = vec3(0.06, 0.09, 0.14);
-        glass += vec3(0.2, 0.7, 1.0) * pow(fresnel, 2.2);
-        glass += vec3(0.9, 0.4, 0.8) * pow(fresnel, 4.8);
-        gl_FragColor = vec4(glass, 0.7);
+        // --- 1: Icy Glass (Cool Frosted Glaze, Calm on the Eyes) ---
+        vec3 glass = vec3(0.05, 0.08, 0.12);
+        glass += vec3(0.2, 0.6, 0.85) * pow(fresnel, 2.0);
+        glass += vec3(0.5, 0.8, 0.7) * pow(fresnel, 4.0) * 0.5;
+        gl_FragColor = vec4(glass, 0.75);
 
       } else if (uMode == 2) {
-        // Cybernetic Lattice
-        float grid = abs(sin(vUv.x * 80.0)) * abs(sin(vUv.y * 80.0));
-        vec3 cyber = mix(vec3(0.05, 0.05, 0.09), vec3(0.2, 0.8, 1.0), pow(grid, 0.12));
-        cyber += vec3(0.9, 0.3, 1.0) * fresnel;
-        gl_FragColor = vec4(cyber, 0.88);
+        // --- 2: Cyber Wire (Subtle Violet Grid) ---
+        float grid = abs(sin(vUv.x * 60.0)) * abs(sin(vUv.y * 60.0));
+        vec3 cyber = mix(vec3(0.06, 0.06, 0.1), vec3(0.3, 0.6, 0.9), pow(grid, 0.15));
+        cyber += vec3(0.6, 0.3, 0.8) * fresnel;
+        gl_FragColor = vec4(cyber, 0.85);
 
       } else {
-        // Vortex Singularity
-        float pulse = sin(uTime * 3.0 + length(vPosition) * 4.0);
-        vec3 vortexCol = mix(vec3(0.7, 0.2, 1.0), vec3(0.1, 0.9, 0.8), fresnel);
-        vortexCol += vec3(1.0, 0.5, 0.2) * pow(fresnel, 3.5) * (0.8 + 0.2 * pulse);
-        gl_FragColor = vec4(vortexCol, 0.92);
+        // --- 3: Cosmic Core (Warm Amber & Rose Violet Glow) ---
+        vec3 warmBase = vec3(0.08, 0.06, 0.1);
+        vec3 warmGlow = mix(vec3(0.7, 0.3, 0.5), vec3(0.9, 0.5, 0.3), fresnel);
+        vec3 col = mix(warmBase, warmGlow, fresnel * 1.2 + 0.1);
+        gl_FragColor = vec4(col, 0.9);
       }
     }
   `;
 
   const shaderUniforms = {
     uTime: { value: 0 },
-    uDistort: { value: 1.2 },
+    uDistort: { value: 0.65 }, // Balanced distortion (smooth, not spiky)
     uMouse: { value: new THREE.Vector2(0, 0) },
     uMode: { value: 0 }
   };
@@ -269,52 +254,49 @@
     wireframe: false
   });
 
-  // --- Dynamic Morphing Geometries ---
+  // Switchable Geometries
   const geometries = {
-    knot: new THREE.TorusKnotGeometry(1.6, 0.5, 128, 32, 2, 3),
-    sphere: new THREE.IcosahedronGeometry(2.1, 64),
-    torus: new THREE.TorusGeometry(1.8, 0.65, 32, 100),
-    icosa: new THREE.IcosahedronGeometry(2.3, 16)
+    knot: new THREE.TorusKnotGeometry(1.4, 0.42, 128, 32, 2, 3),
+    sphere: new THREE.IcosahedronGeometry(1.8, 64),
+    torus: new THREE.TorusGeometry(1.5, 0.5, 32, 100),
+    icosa: new THREE.IcosahedronGeometry(1.9, 16)
   };
 
+  // 3D Sculpture Group
+  const sculptureGroup = new THREE.Group();
+  scene.add(sculptureGroup);
+
+  // Initial Placement: Positioned gracefully to the right on desktop
+  const isDesktop = window.innerWidth > 1024;
+  sculptureGroup.position.set(isDesktop ? 1.5 : 0, isDesktop ? 0.1 : 0, 0);
+
   const coreMesh = new THREE.Mesh(geometries.knot, coreMaterial);
-  scene.add(coreMesh);
+  sculptureGroup.add(coreMesh);
 
   // --- Concentric Orbital Rings ---
-  const ringGroup = new THREE.Group();
-  scene.add(ringGroup);
-
-  const ringGeo1 = new THREE.TorusGeometry(3.1, 0.02, 16, 120);
-  const ringMat1 = new THREE.MeshBasicMaterial({
-    color: 0x38bdf8,
-    transparent: true,
-    opacity: 0.35,
-    wireframe: true
-  });
-  const ring1 = new THREE.Mesh(ringGeo1, ringMat1);
+  const ring1 = new THREE.Mesh(
+    new THREE.TorusGeometry(2.6, 0.015, 16, 100),
+    new THREE.MeshBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.25, wireframe: true })
+  );
   ring1.rotation.x = Math.PI * 0.35;
-  ringGroup.add(ring1);
+  sculptureGroup.add(ring1);
 
-  const ringGeo2 = new THREE.TorusGeometry(3.6, 0.015, 16, 120);
-  const ringMat2 = new THREE.MeshBasicMaterial({
-    color: 0xc084fc,
-    transparent: true,
-    opacity: 0.25,
-    wireframe: true
-  });
-  const ring2 = new THREE.Mesh(ringGeo2, ringMat2);
+  const ring2 = new THREE.Mesh(
+    new THREE.TorusGeometry(3.0, 0.012, 16, 100),
+    new THREE.MeshBasicMaterial({ color: 0xa78bfa, transparent: true, opacity: 0.2, wireframe: true })
+  );
   ring2.rotation.y = Math.PI * 0.4;
-  ringGroup.add(ring2);
+  sculptureGroup.add(ring2);
 
-  // --- Gravitational Cosmic Particle Vortex ---
-  const particleCount = 4000;
+  // --- Gentle Cosmic Particle Dust (Subtle & Non-distracting) ---
+  const particleCount = 2000;
   const particleGeo = new THREE.BufferGeometry();
   const particlePositions = new Float32Array(particleCount * 3);
-  const originalPositions = new Float32Array(particleCount * 3);
+  const particleOriginals = new Float32Array(particleCount * 3);
 
   for (let i = 0; i < particleCount; i++) {
     const i3 = i * 3;
-    const radius = 3.5 + Math.random() * 8.5;
+    const radius = 3.2 + Math.random() * 7.5;
     const theta = Math.random() * Math.PI * 2;
     const phi = Math.acos(Math.random() * 2 - 1);
 
@@ -326,41 +308,33 @@
     particlePositions[i3 + 1] = y;
     particlePositions[i3 + 2] = z;
 
-    originalPositions[i3] = x;
-    originalPositions[i3 + 1] = y;
-    originalPositions[i3 + 2] = z;
+    particleOriginals[i3] = x;
+    particleOriginals[i3 + 1] = y;
+    particleOriginals[i3 + 2] = z;
   }
 
   particleGeo.setAttribute('position', new THREE.BufferAttribute(particlePositions, 3));
 
   const particleMat = new THREE.PointsMaterial({
-    size: 0.038,
-    color: 0xa5f3fc,
+    size: 0.024,
+    color: 0x94a3b8,
     transparent: true,
-    opacity: 0.55,
+    opacity: 0.35,
     blending: THREE.AdditiveBlending
   });
 
   const particleSystem = new THREE.Points(particleGeo, particleMat);
   scene.add(particleSystem);
 
-  // --- Mouse & Touch Tracking ---
-  const compassPointer = document.getElementById('compass-pointer');
-
+  // --- Mouse & Gesture Interaction ---
   window.addEventListener('mousemove', (e) => {
     state.mouse.targetX = (e.clientX / window.innerWidth) * 2 - 1;
     state.mouse.targetY = -(e.clientY / window.innerHeight) * 2 + 1;
 
-    // Compass angle
-    if (compassPointer) {
-      const angle = Math.atan2(-state.mouse.targetY, state.mouse.targetX);
-      compassPointer.style.transform = `rotate(${angle}rad)`;
-    }
-
-    // Dynamic Filter Frequency based on mouse position
+    // Filter frequency modulation
     if (filterNode && state.audioActive && audioCtx) {
-      const freq = 200 + ((state.mouse.targetX + 1) * 0.5) * 800;
-      filterNode.frequency.setTargetAtTime(freq, audioCtx.currentTime, 0.1);
+      const f = 250 + ((state.mouse.targetX + 1) * 0.5) * 600;
+      filterNode.frequency.setTargetAtTime(f, audioCtx.currentTime, 0.1);
     }
   });
 
@@ -371,23 +345,22 @@
     }
   }, { passive: true });
 
-  // --- Interactive Smooth Cursor ---
-  const cursorCore = document.getElementById('cursor-core');
-  const cursorFollower = document.getElementById('cursor-follower');
-  const cursorGlow = document.getElementById('cursor-glow');
+  // --- Custom Smooth Cursor ---
+  const cursorDot = document.getElementById('cursor-dot');
+  const cursorRing = document.getElementById('cursor-ring');
 
   let curX = window.innerWidth / 2;
   let curY = window.innerHeight / 2;
-  let folX = curX;
-  let folY = curY;
+  let ringX = curX;
+  let ringY = curY;
 
   window.addEventListener('mousemove', (e) => {
     curX = e.clientX;
     curY = e.clientY;
   });
 
-  // Magnetic elements
-  const magnetics = document.querySelectorAll('[data-magnetic], [data-magnetic-row], [data-tilt]');
+  // Magnetic hover
+  const magnetics = document.querySelectorAll('[data-magnetic], [data-magnetic-card]');
   magnetics.forEach((el) => {
     el.addEventListener('mouseenter', () => document.body.classList.add('cursor-hover'));
     el.addEventListener('mouseleave', () => {
@@ -398,12 +371,12 @@
       const rect = el.getBoundingClientRect();
       const x = e.clientX - rect.left - rect.width / 2;
       const y = e.clientY - rect.top - rect.height / 2;
-      el.style.transform = `translate(${x * 0.16}px, ${y * 0.16}px)`;
+      el.style.transform = `translate(${x * 0.14}px, ${y * 0.14}px)`;
     });
   });
 
-  // --- Interactive HUD Controls ---
-  const modeButtons = document.querySelectorAll('.hud-mode-btn');
+  // --- HUD Preset Buttons ---
+  const modeButtons = document.querySelectorAll('.shader-btn');
   const modeIndex = { prismatic: 0, celestial: 1, cybernetic: 2, vortex: 3 };
 
   modeButtons.forEach((btn) => {
@@ -417,7 +390,6 @@
       state.shaderMode = mode;
       state.geometryType = geo;
 
-      // Switch geometry seamlessly
       if (geometries[geo]) {
         coreMesh.geometry = geometries[geo];
       }
@@ -425,10 +397,10 @@
       shaderUniforms.uMode.value = modeIndex[mode] || 0;
       coreMaterial.wireframe = (mode === 'cybernetic');
 
-      triggerChime(659.25, 0.8);
+      playChime(659.25);
 
       gsap.to(shaderUniforms.uDistort, {
-        value: state.turbulence * 1.8,
+        value: 1.1,
         duration: 0.35,
         yoyo: true,
         repeat: 1,
@@ -437,50 +409,22 @@
     });
   });
 
-  // Turbulence Slider
-  const turbSlider = document.getElementById('turbulence-range');
-  if (turbSlider) {
-    turbSlider.addEventListener('input', (e) => {
-      state.turbulence = parseFloat(e.target.value);
-      shaderUniforms.uDistort.value = state.turbulence;
-    });
-  }
-
-  // Particle Density Toggle
-  const densityBtn = document.getElementById('density-toggle');
-  if (densityBtn) {
-    densityBtn.addEventListener('click', () => {
-      if (state.particleDensity === 'hyper') {
-        state.particleDensity = 'luminous';
-        densityBtn.textContent = 'LUMINOUS (2K)';
-        particleMat.size = 0.06;
-        particleMat.opacity = 0.85;
-      } else {
-        state.particleDensity = 'hyper';
-        densityBtn.textContent = 'HYPER (4K)';
-        particleMat.size = 0.038;
-        particleMat.opacity = 0.55;
-      }
-      triggerChime(440, 0.4);
-    });
-  }
-
-  // Audio Toggle
-  const audioToggle = document.getElementById('audio-toggle');
-  if (audioToggle) {
-    audioToggle.addEventListener('click', () => {
+  // Audio Toggle Button
+  const audioBtn = document.getElementById('audio-toggle');
+  if (audioBtn) {
+    audioBtn.addEventListener('click', () => {
       state.audioActive = !state.audioActive;
       if (state.audioActive) {
-        initSpatialAudio();
+        initAudio();
         if (audioCtx && audioCtx.state === 'suspended') {
           audioCtx.resume();
         }
-        audioToggle.classList.add('playing');
-        audioToggle.querySelector('.sound-text').textContent = 'AUDIO: LIVE';
-        triggerChime(587.33);
+        audioBtn.classList.add('playing');
+        audioBtn.querySelector('.sound-text').textContent = 'SOUND: ON';
+        playChime(587.33);
       } else {
-        audioToggle.classList.remove('playing');
-        audioToggle.querySelector('.sound-text').textContent = 'AUDIO: MUTED';
+        audioBtn.classList.remove('playing');
+        audioBtn.querySelector('.sound-text').textContent = 'SOUND: OFF';
         if (audioCtx) {
           audioCtx.suspend();
         }
@@ -488,48 +432,46 @@
     });
   }
 
-  // Supermassive Warp Button
-  const warpBtn = document.getElementById('warp-speed-btn');
+  // Supercharge / Warp Action Button
+  const warpBtn = document.getElementById('warp-btn');
   if (warpBtn) {
     warpBtn.addEventListener('click', () => {
-      triggerChime(880, 2.5);
+      playChime(880);
       state.isWarping = true;
 
       gsap.to(camera.position, {
-        z: 3.8,
-        duration: 0.8,
-        ease: 'power3.in',
+        z: 4.8,
+        duration: 0.6,
         yoyo: true,
         repeat: 1,
-        onComplete: () => {
-          state.isWarping = false;
-        }
+        ease: 'expo.out',
+        onComplete: () => { state.isWarping = false; }
       });
 
       gsap.to(shaderUniforms.uDistort, {
-        value: 4.5,
-        duration: 0.9,
+        value: 2.2,
+        duration: 0.7,
         yoyo: true,
         repeat: 1,
-        ease: 'elastic.out(1, 0.25)'
+        ease: 'elastic.out(1, 0.3)'
       });
     });
   }
 
-  // Hovering on work items reacts on 3D Core
-  const workRows = document.querySelectorAll('.work-row');
-  workRows.forEach((row) => {
-    row.addEventListener('mouseenter', () => {
-      const mode = row.dataset.meshTrigger;
+  // Work Item Hover Reaction
+  const workItems = document.querySelectorAll('.work-item');
+  workItems.forEach((item) => {
+    item.addEventListener('mouseenter', () => {
+      const mode = item.dataset.meshMode;
       if (mode && modeIndex[mode] !== undefined) {
         shaderUniforms.uMode.value = modeIndex[mode];
-        triggerChime(523.25, 0.5);
+        playChime(523.25);
       }
-      gsap.to(coreMesh.scale, { x: 1.15, y: 1.15, z: 1.15, duration: 0.4, ease: 'power2.out' });
+      gsap.to(coreMesh.scale, { x: 1.12, y: 1.12, z: 1.12, duration: 0.35, ease: 'power2.out' });
     });
-    row.addEventListener('mouseleave', () => {
+    item.addEventListener('mouseleave', () => {
       shaderUniforms.uMode.value = modeIndex[state.shaderMode] || 0;
-      gsap.to(coreMesh.scale, { x: 1.0, y: 1.0, z: 1.0, duration: 0.4, ease: 'power2.out' });
+      gsap.to(coreMesh.scale, { x: 1.0, y: 1.0, z: 1.0, duration: 0.35, ease: 'power2.out' });
     });
   });
 
@@ -537,58 +479,46 @@
   if (window.gsap && window.ScrollTrigger) {
     gsap.registerPlugin(ScrollTrigger);
 
-    // Hero -> Manifesto: camera travels & core moves right
-    gsap.to(coreMesh.position, {
+    // Hero -> Manifesto: sculpture gently travels toward left
+    gsap.to(sculptureGroup.position, {
       scrollTrigger: {
         trigger: '#manifesto',
         start: 'top bottom',
         end: 'center center',
         scrub: 1.2
       },
-      x: 1.9,
+      x: isDesktop ? -1.4 : 0,
       y: -0.2,
-      z: -0.5
+      z: -0.6
     });
 
-    // Manifesto -> Works: core scales up and centers
-    gsap.to(coreMesh.position, {
+    // Manifesto -> Works: sculpture returns to right side
+    gsap.to(sculptureGroup.position, {
       scrollTrigger: {
         trigger: '#works',
         start: 'top bottom',
         end: 'bottom bottom',
         scrub: 1.4
       },
-      x: -1.7,
-      y: 0.3,
-      z: 0.4
-    });
-
-    // Experiments: ring group spin acceleration
-    gsap.to(ringGroup.rotation, {
-      scrollTrigger: {
-        trigger: '#experiments',
-        start: 'top bottom',
-        end: 'bottom top',
-        scrub: 2
-      },
-      z: Math.PI * 2,
-      x: Math.PI
+      x: isDesktop ? 1.6 : 0,
+      y: 0.2,
+      z: 0.2
     });
   }
 
-  // --- Animation & Physics Engine Loop ---
+  // --- Main Animation & Render Loop ---
   let clock = new THREE.Clock();
   let frameCount = 0;
   let lastTime = performance.now();
   const fpsEl = document.getElementById('fps-counter');
 
-  function renderLoop() {
-    requestAnimationFrame(renderLoop);
+  function animate() {
+    requestAnimationFrame(animate);
 
     const delta = clock.getDelta();
     const elapsed = clock.getElapsedTime();
 
-    // FPS Meter
+    // FPS Counter
     frameCount++;
     const now = performance.now();
     if (now - lastTime >= 1000) {
@@ -597,61 +527,51 @@
       lastTime = now;
     }
 
-    // Smooth Mouse Velocity Interpolation
-    state.mouse.x += (state.mouse.targetX - state.mouse.x) * 0.06;
-    state.mouse.y += (state.mouse.targetY - state.mouse.y) * 0.06;
+    // Smooth Mouse Interpolation
+    state.mouse.x += (state.mouse.targetX - state.mouse.x) * 0.05;
+    state.mouse.y += (state.mouse.targetY - state.mouse.y) * 0.05;
 
     // Update Uniforms
     shaderUniforms.uTime.value = elapsed;
     shaderUniforms.uMouse.value.set(state.mouse.x, state.mouse.y);
 
-    // Core Mesh Rotations
-    const warpMult = state.isWarping ? 4.0 : 1.0;
-    coreMesh.rotation.y += (0.007 + state.mouse.x * 0.02) * warpMult;
-    coreMesh.rotation.x += (0.005 + state.mouse.y * 0.02) * warpMult;
+    // Core Rotation
+    const warpSpeed = state.isWarping ? 3.5 : 1.0;
+    coreMesh.rotation.y += (0.006 + state.mouse.x * 0.015) * warpSpeed;
+    coreMesh.rotation.x += (0.004 + state.mouse.y * 0.015) * warpSpeed;
 
     // Rings Rotation
-    ring1.rotation.z += 0.006 * warpMult;
-    ring2.rotation.x += 0.004 * warpMult;
+    ring1.rotation.z += 0.005 * warpSpeed;
+    ring2.rotation.x += 0.003 * warpSpeed;
 
-    // Cosmic Particles Gravitational Vortex
-    const positions = particleGeo.attributes.position.array;
-    for (let i = 0; i < particleCount; i++) {
-      const i3 = i * 3;
-      // Drift & orbital swirl
-      const ox = originalPositions[i3];
-      const oy = originalPositions[i3 + 1];
-      const oz = originalPositions[i3 + 2];
+    // Gentle Particle Swirl
+    particleSystem.rotation.y = elapsed * 0.015;
+    particleSystem.rotation.x = Math.sin(elapsed * 0.01) * 0.08;
 
-      const angle = elapsed * 0.15 + (i * 0.002);
-      positions[i3] = ox * Math.cos(angle) - oz * Math.sin(angle) + state.mouse.x * 0.8;
-      positions[i3 + 2] = ox * Math.sin(angle) + oz * Math.cos(angle) + state.mouse.y * 0.8;
-      positions[i3 + 1] = oy + Math.sin(elapsed + i) * 0.12;
-    }
-    particleGeo.attributes.position.needsUpdate = true;
-
-    // Render WebGL
+    // Render WebGL Scene
     renderer.render(scene, camera);
 
-    // Smooth Custom Cursor
-    folX += (curX - folX) * 0.16;
-    folY += (curY - folY) * 0.16;
-    if (cursorCore) cursorCore.style.transform = `translate3d(${curX}px, ${curY}px, 0) translate(-50%, -50%)`;
-    if (cursorFollower) cursorFollower.style.transform = `translate3d(${folX}px, ${folY}px, 0) translate(-50%, -50%)`;
-    if (cursorGlow) cursorGlow.style.transform = `translate3d(${curX}px, ${curY}px, 0) translate(-50%, -50%)`;
+    // Smooth Follower Cursor
+    ringX += (curX - ringX) * 0.16;
+    ringY += (curY - ringY) * 0.16;
+    if (cursorDot) cursorDot.style.transform = `translate3d(${curX}px, ${curY}px, 0) translate(-50%, -50%)`;
+    if (cursorRing) cursorRing.style.transform = `translate3d(${ringX}px, ${ringY}px, 0) translate(-50%, -50%)`;
   }
 
-  renderLoop();
+  animate();
 
-  // --- Window Resize ---
+  // --- Window Resize Handling ---
   window.addEventListener('resize', () => {
     camera.aspect = window.innerWidth / window.innerHeight;
     camera.updateProjectionMatrix();
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+    const desktop = window.innerWidth > 1024;
+    sculptureGroup.position.set(desktop ? 1.5 : 0, desktop ? 0.1 : 0, 0);
   });
 
-  console.log('%c AETHERIA LAB %c 3D Spatial Computing Engine Initialized (60 FPS) ', 
-    'background: #38bdf8; color: #000; padding: 4px 8px; font-weight: bold; border-radius: 4px 0 0 4px;', 
-    'background: #050508; color: #c084fc; padding: 4px 8px; border-radius: 0 4px 4px 0;');
+  console.log('%c AETHERIA LAB %c 3D Spatial Engine Active • Visual Comfort Mode ',
+    'background: #38bdf8; color: #000; padding: 4px 8px; font-weight: bold; border-radius: 4px 0 0 4px;',
+    'background: #08090d; color: #a78bfa; padding: 4px 8px; border-radius: 0 4px 4px 0;');
 })();
