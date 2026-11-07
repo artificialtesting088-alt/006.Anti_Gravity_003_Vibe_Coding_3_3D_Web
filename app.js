@@ -1,110 +1,129 @@
 /**
- * LUSĪON • Creative 3D Studio Engine
- * WebGL, Three.js, Generative Shaders & Kinetic Interactions
+ * AETHERIA // Spatial Design & Creative Engineering Laboratory
+ * High-Performance WebGL Engine, Custom Shaders & Dynamic Sound Synthesis
  */
 
 (() => {
   'use strict';
 
-  // --- Global State ---
+  // --- Engine State ---
   const state = {
     mouse: { x: 0, y: 0, targetX: 0, targetY: 0, velX: 0, velY: 0 },
-    scroll: { current: 0, target: 0, ease: 0.08 },
-    mode: 'iridescent',
-    speedMultiplier: 1.0,
-    isSupercharged: false,
-    audioActive: false
+    geometryType: 'knot', // 'knot', 'sphere', 'torus', 'icosa'
+    shaderMode: 'prismatic',
+    turbulence: 1.2,
+    audioActive: false,
+    particleDensity: 'hyper',
+    isWarping: false
   };
 
-  // --- Web Audio Synthesizer (Zero External Assets) ---
-  let audioCtx = null;
-  let ambientOsc1 = null;
-  let ambientOsc2 = null;
-  let masterGain = null;
+  // --- Real-time Clock ---
+  function updateClock() {
+    const el = document.getElementById('utc-clock');
+    if (el) {
+      const now = new Date();
+      el.textContent = `UTC ${now.toUTCString().split(' ')[4]}`;
+    }
+  }
+  setInterval(updateClock, 1000);
+  updateClock();
 
-  function initAudio() {
+  // --- Web Audio Polyphonic Ambient Synthesizer ---
+  let audioCtx = null;
+  let masterGain = null;
+  let padOsc1 = null;
+  let padOsc2 = null;
+  let padOsc3 = null;
+  let filterNode = null;
+
+  function initSpatialAudio() {
     if (audioCtx) return;
     try {
       const AudioContext = window.AudioContext || window.webkitAudioContext;
       audioCtx = new AudioContext();
 
       masterGain = audioCtx.createGain();
-      masterGain.gain.setValueAtTime(0.04, audioCtx.currentTime);
+      masterGain.gain.setValueAtTime(0.045, audioCtx.currentTime);
       masterGain.connect(audioCtx.destination);
 
-      // Warm atmospheric sub-drone
-      ambientOsc1 = audioCtx.createOscillator();
-      ambientOsc1.type = 'sine';
-      ambientOsc1.frequency.setValueAtTime(55, audioCtx.currentTime); // A1 note
+      filterNode = audioCtx.createBiquadFilter();
+      filterNode.type = 'lowpass';
+      filterNode.frequency.setValueAtTime(450, audioCtx.currentTime);
+      filterNode.connect(masterGain);
 
-      ambientOsc2 = audioCtx.createOscillator();
-      ambientOsc2.type = 'triangle';
-      ambientOsc2.frequency.setValueAtTime(110.5, audioCtx.currentTime); // A2 slight detune
+      // 3 Harmonic Oscillators creating an atmospheric chord (D minor / celestial 5th)
+      padOsc1 = audioCtx.createOscillator();
+      padOsc1.type = 'sine';
+      padOsc1.frequency.setValueAtTime(73.42, audioCtx.currentTime); // D2
 
-      const filter = audioCtx.createBiquadFilter();
-      filter.type = 'lowpass';
-      filter.frequency.setValueAtTime(320, audioCtx.currentTime);
+      padOsc2 = audioCtx.createOscillator();
+      padOsc2.type = 'triangle';
+      padOsc2.frequency.setValueAtTime(110.0, audioCtx.currentTime); // A2
 
-      ambientOsc1.connect(filter);
-      ambientOsc2.connect(filter);
-      filter.connect(masterGain);
+      padOsc3 = audioCtx.createOscillator();
+      padOsc3.type = 'sine';
+      padOsc3.frequency.setValueAtTime(146.83, audioCtx.currentTime); // D3
 
-      ambientOsc1.start();
-      ambientOsc2.start();
+      padOsc1.connect(filterNode);
+      padOsc2.connect(filterNode);
+      padOsc3.connect(filterNode);
+
+      padOsc1.start();
+      padOsc2.start();
+      padOsc3.start();
     } catch (e) {
-      console.warn('Web Audio not supported:', e);
+      console.warn('Web Audio error:', e);
     }
   }
 
-  function playChime(freq = 440) {
+  function triggerChime(freq = 587.33, duration = 1.4) {
     if (!audioCtx || !state.audioActive) return;
     const osc = audioCtx.createOscillator();
-    const gain = audioCtx.createGain();
+    const chimeGain = audioCtx.createGain();
+
     osc.type = 'sine';
     osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
 
-    gain.gain.setValueAtTime(0.08, audioCtx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 1.2);
+    chimeGain.gain.setValueAtTime(0.09, audioCtx.currentTime);
+    chimeGain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + duration);
 
-    osc.connect(gain);
-    gain.connect(audioCtx.destination);
+    osc.connect(chimeGain);
+    chimeGain.connect(audioCtx.destination);
     osc.start();
-    osc.stop(audioCtx.currentTime + 1.2);
+    osc.stop(audioCtx.currentTime + duration);
   }
 
-  // --- Three.js 3D Canvas Experience ---
-  const container = document.getElementById('webgl-container');
+  // --- Three.js WebGL Scene Architecture ---
+  const container = document.getElementById('canvas-container');
   const scene = new THREE.Scene();
+  
   const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 100);
-  camera.position.z = 7;
+  camera.position.set(0, 0, 7.5);
 
-  const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+  const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'high-performance' });
   renderer.setSize(window.innerWidth, window.innerHeight);
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 1.1;
+  renderer.toneMappingExposure = 1.25;
   container.appendChild(renderer.domElement);
 
-  // --- Lighting Setup ---
-  const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+  // --- Dynamic Volumetric Lighting ---
+  const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
   scene.add(ambientLight);
 
-  const pointLight1 = new THREE.PointLight(0x38bdf8, 3, 20);
-  pointLight1.position.set(5, 5, 4);
-  scene.add(pointLight1);
+  const keyLight = new THREE.PointLight(0x38bdf8, 3.5, 25);
+  keyLight.position.set(6, 5, 5);
+  scene.add(keyLight);
 
-  const pointLight2 = new THREE.PointLight(0xa855f7, 3, 20);
-  pointLight2.position.set(-5, -4, 4);
-  scene.add(pointLight2);
+  const fillLight = new THREE.PointLight(0xc084fc, 3.0, 25);
+  fillLight.position.set(-6, -4, 4);
+  scene.add(fillLight);
 
-  const pointLight3 = new THREE.PointLight(0xec4899, 2.5, 20);
-  pointLight3.position.set(0, 4, -4);
-  scene.add(pointLight3);
+  const rimLight = new THREE.PointLight(0xf472b6, 2.5, 20);
+  rimLight.position.set(0, 6, -5);
+  scene.add(rimLight);
 
-  // --- Organic Morphing Geometry & Simplex Noise Shaders ---
-  const geometry = new THREE.IcosahedronGeometry(2.1, 64);
-  
-  // Custom GLSL Shader for Organic Iridescence
+  // --- Procedural Simplex Noise Vertex & Fragment Shader ---
   const vertexShader = `
     uniform float uTime;
     uniform float uDistort;
@@ -167,36 +186,32 @@
       vUv = uv;
       vNormal = normalize(normalMatrix * normal);
       
-      // Calculate continuous procedural displacement
-      vec3 coords = normal * 1.5 + vec3(uTime * 0.45);
+      vec3 coords = normal * 1.8 + vec3(uTime * 0.4);
       float noise = snoise(coords);
       
-      // Mouse dynamic influence
-      float mouseInfluence = sin(dot(normal.xy, uMouse) * 3.1415) * 0.25;
-      
-      float displacement = (noise * 0.35 + mouseInfluence) * uDistort;
+      float mouseInfluence = sin(dot(normal.xy, uMouse) * 3.14159) * 0.22;
+      float displacement = (noise * 0.38 + mouseInfluence) * uDistort;
       vDisplacement = displacement;
       
-      vec3 newPosition = position + normal * displacement;
-      vPosition = newPosition;
-      gl_Position = projectionMatrix * modelViewMatrix * vec4(newPosition, 1.0);
+      vec3 newPos = position + normal * displacement;
+      vPosition = newPos;
+      gl_Position = projectionMatrix * modelViewMatrix * vec4(newPos, 1.0);
     }
   `;
 
   const fragmentShader = `
     uniform float uTime;
-    uniform int uMode; // 0: Iridescent, 1: Cyber, 2: Liquid, 3: Matrix
+    uniform int uMode; // 0: Prismatic, 1: Celestial Glass, 2: Cybernetic, 3: Vortex
     varying vec3 vNormal;
     varying vec3 vPosition;
     varying vec2 vUv;
     varying float vDisplacement;
 
-    // Iridescent Palette Generator
     vec3 palette(float t) {
       vec3 a = vec3(0.5, 0.5, 0.5);
       vec3 b = vec3(0.5, 0.5, 0.5);
       vec3 c = vec3(1.0, 1.0, 1.0);
-      vec3 d = vec3(0.00, 0.33, 0.67);
+      vec3 d = vec3(0.05, 0.33, 0.67);
       return a + b * cos(6.28318 * (c * t + d));
     }
 
@@ -204,49 +219,49 @@
       vec3 viewDir = normalize(-vPosition);
       float fresnel = dot(viewDir, vNormal);
       fresnel = clamp(1.0 - fresnel, 0.0, 1.0);
-      fresnel = pow(fresnel, 2.2);
+      fresnel = pow(fresnel, 2.4);
 
       if (uMode == 0) {
-        // --- 0: Iridescent Chrome Mode (Lusion Signature) ---
-        float colorSeed = fresnel + vDisplacement * 0.8 + uTime * 0.15;
-        vec3 iridescentColor = palette(colorSeed);
-        
-        vec3 baseShade = vec3(0.04, 0.04, 0.07);
-        vec3 finalColor = mix(baseShade, iridescentColor, fresnel * 1.35 + 0.15);
-        finalColor += vec3(0.4, 0.8, 1.0) * pow(fresnel, 4.0) * 0.6; // Edge glare
-        gl_FragColor = vec4(finalColor, 0.94);
+        // Prismatic Core
+        float seed = fresnel * 1.2 + vDisplacement * 0.9 + uTime * 0.18;
+        vec3 spectral = palette(seed);
+        vec3 base = vec3(0.04, 0.04, 0.08);
+        vec3 col = mix(base, spectral, fresnel * 1.4 + 0.1);
+        col += vec3(0.6, 0.9, 1.0) * pow(fresnel, 4.5);
+        gl_FragColor = vec4(col, 0.94);
 
       } else if (uMode == 1) {
-        // --- 1: Cyber Wireframe Mode ---
-        float grid = abs(sin(vUv.x * 90.0)) * abs(sin(vUv.y * 90.0));
-        vec3 cyberColor = mix(vec3(0.05, 0.05, 0.1), vec3(0.1, 0.9, 1.0), pow(grid, 0.1));
-        cyberColor += vec3(0.8, 0.2, 1.0) * fresnel;
-        gl_FragColor = vec4(cyberColor, 0.88);
+        // Celestial Glass
+        vec3 glass = vec3(0.06, 0.09, 0.14);
+        glass += vec3(0.2, 0.7, 1.0) * pow(fresnel, 2.2);
+        glass += vec3(0.9, 0.4, 0.8) * pow(fresnel, 4.8);
+        gl_FragColor = vec4(glass, 0.7);
 
       } else if (uMode == 2) {
-        // --- 2: Liquid Glass Mode ---
-        vec3 glass = vec3(0.08, 0.1, 0.15);
-        glass += vec3(0.2, 0.7, 1.0) * pow(fresnel, 2.5);
-        glass += vec3(1.0, 0.3, 0.6) * pow(fresnel, 5.0);
-        gl_FragColor = vec4(glass, 0.65);
+        // Cybernetic Lattice
+        float grid = abs(sin(vUv.x * 80.0)) * abs(sin(vUv.y * 80.0));
+        vec3 cyber = mix(vec3(0.05, 0.05, 0.09), vec3(0.2, 0.8, 1.0), pow(grid, 0.12));
+        cyber += vec3(0.9, 0.3, 1.0) * fresnel;
+        gl_FragColor = vec4(cyber, 0.88);
 
       } else {
-        // --- 3: Quantum Particle Hologram ---
-        float dots = step(0.65, sin(vPosition.x * 25.0) * sin(vPosition.y * 25.0) * sin(vPosition.z * 25.0));
-        vec3 matrixColor = mix(vec3(0.0, 0.9, 0.6), vec3(0.2, 0.6, 1.0), fresnel);
-        gl_FragColor = vec4(matrixColor * dots, dots * 0.9);
+        // Vortex Singularity
+        float pulse = sin(uTime * 3.0 + length(vPosition) * 4.0);
+        vec3 vortexCol = mix(vec3(0.7, 0.2, 1.0), vec3(0.1, 0.9, 0.8), fresnel);
+        vortexCol += vec3(1.0, 0.5, 0.2) * pow(fresnel, 3.5) * (0.8 + 0.2 * pulse);
+        gl_FragColor = vec4(vortexCol, 0.92);
       }
     }
   `;
 
   const shaderUniforms = {
     uTime: { value: 0 },
-    uDistort: { value: 1.0 },
+    uDistort: { value: 1.2 },
     uMouse: { value: new THREE.Vector2(0, 0) },
     uMode: { value: 0 }
   };
 
-  const shaderMaterial = new THREE.ShaderMaterial({
+  const coreMaterial = new THREE.ShaderMaterial({
     vertexShader,
     fragmentShader,
     uniforms: shaderUniforms,
@@ -254,34 +269,75 @@
     wireframe: false
   });
 
-  const morphMesh = new THREE.Mesh(geometry, shaderMaterial);
-  scene.add(morphMesh);
+  // --- Dynamic Morphing Geometries ---
+  const geometries = {
+    knot: new THREE.TorusKnotGeometry(1.6, 0.5, 128, 32, 2, 3),
+    sphere: new THREE.IcosahedronGeometry(2.1, 64),
+    torus: new THREE.TorusGeometry(1.8, 0.65, 32, 100),
+    icosa: new THREE.IcosahedronGeometry(2.3, 16)
+  };
 
-  // --- Surrounding Ambient Starfield / Particle Dust ---
-  const particleCount = 2000;
+  const coreMesh = new THREE.Mesh(geometries.knot, coreMaterial);
+  scene.add(coreMesh);
+
+  // --- Concentric Orbital Rings ---
+  const ringGroup = new THREE.Group();
+  scene.add(ringGroup);
+
+  const ringGeo1 = new THREE.TorusGeometry(3.1, 0.02, 16, 120);
+  const ringMat1 = new THREE.MeshBasicMaterial({
+    color: 0x38bdf8,
+    transparent: true,
+    opacity: 0.35,
+    wireframe: true
+  });
+  const ring1 = new THREE.Mesh(ringGeo1, ringMat1);
+  ring1.rotation.x = Math.PI * 0.35;
+  ringGroup.add(ring1);
+
+  const ringGeo2 = new THREE.TorusGeometry(3.6, 0.015, 16, 120);
+  const ringMat2 = new THREE.MeshBasicMaterial({
+    color: 0xc084fc,
+    transparent: true,
+    opacity: 0.25,
+    wireframe: true
+  });
+  const ring2 = new THREE.Mesh(ringGeo2, ringMat2);
+  ring2.rotation.y = Math.PI * 0.4;
+  ringGroup.add(ring2);
+
+  // --- Gravitational Cosmic Particle Vortex ---
+  const particleCount = 4000;
   const particleGeo = new THREE.BufferGeometry();
   const particlePositions = new Float32Array(particleCount * 3);
-  const particleScales = new Float32Array(particleCount);
+  const originalPositions = new Float32Array(particleCount * 3);
 
   for (let i = 0; i < particleCount; i++) {
     const i3 = i * 3;
-    const radius = 4 + Math.random() * 8;
+    const radius = 3.5 + Math.random() * 8.5;
     const theta = Math.random() * Math.PI * 2;
     const phi = Math.acos(Math.random() * 2 - 1);
 
-    particlePositions[i3] = radius * Math.sin(phi) * Math.cos(theta);
-    particlePositions[i3 + 1] = radius * Math.sin(phi) * Math.sin(theta);
-    particlePositions[i3 + 2] = radius * Math.cos(phi);
-    particleScales[i] = Math.random() * 0.04 + 0.01;
+    const x = radius * Math.sin(phi) * Math.cos(theta);
+    const y = radius * Math.sin(phi) * Math.sin(theta);
+    const z = radius * Math.cos(phi);
+
+    particlePositions[i3] = x;
+    particlePositions[i3 + 1] = y;
+    particlePositions[i3 + 2] = z;
+
+    originalPositions[i3] = x;
+    originalPositions[i3 + 1] = y;
+    originalPositions[i3 + 2] = z;
   }
 
   particleGeo.setAttribute('position', new THREE.BufferAttribute(particlePositions, 3));
 
   const particleMat = new THREE.PointsMaterial({
-    size: 0.035,
-    color: 0x93c5fd,
+    size: 0.038,
+    color: 0xa5f3fc,
     transparent: true,
-    opacity: 0.45,
+    opacity: 0.55,
     blending: THREE.AdditiveBlending
   });
 
@@ -289,9 +345,23 @@
   scene.add(particleSystem);
 
   // --- Mouse & Touch Tracking ---
+  const compassPointer = document.getElementById('compass-pointer');
+
   window.addEventListener('mousemove', (e) => {
     state.mouse.targetX = (e.clientX / window.innerWidth) * 2 - 1;
     state.mouse.targetY = -(e.clientY / window.innerHeight) * 2 + 1;
+
+    // Compass angle
+    if (compassPointer) {
+      const angle = Math.atan2(-state.mouse.targetY, state.mouse.targetX);
+      compassPointer.style.transform = `rotate(${angle}rad)`;
+    }
+
+    // Dynamic Filter Frequency based on mouse position
+    if (filterNode && state.audioActive && audioCtx) {
+      const freq = 200 + ((state.mouse.targetX + 1) * 0.5) * 800;
+      filterNode.frequency.setTargetAtTime(freq, audioCtx.currentTime, 0.1);
+    }
   });
 
   window.addEventListener('touchmove', (e) => {
@@ -301,21 +371,23 @@
     }
   }, { passive: true });
 
-  // --- Custom Follower Cursor ---
-  const cursorDot = document.getElementById('cursor-dot');
-  const cursorCircle = document.getElementById('cursor-circle');
-  let cursorX = window.innerWidth / 2;
-  let cursorY = window.innerHeight / 2;
-  let circleX = cursorX;
-  let circleY = cursorY;
+  // --- Interactive Smooth Cursor ---
+  const cursorCore = document.getElementById('cursor-core');
+  const cursorFollower = document.getElementById('cursor-follower');
+  const cursorGlow = document.getElementById('cursor-glow');
+
+  let curX = window.innerWidth / 2;
+  let curY = window.innerHeight / 2;
+  let folX = curX;
+  let folY = curY;
 
   window.addEventListener('mousemove', (e) => {
-    cursorX = e.clientX;
-    cursorY = e.clientY;
+    curX = e.clientX;
+    curY = e.clientY;
   });
 
-  // Magnetic hover states on clickable targets
-  const magnetics = document.querySelectorAll('[data-magnetic], [data-magnetic-card], [data-magnetic-row]');
+  // Magnetic elements
+  const magnetics = document.querySelectorAll('[data-magnetic], [data-magnetic-row], [data-tilt]');
   magnetics.forEach((el) => {
     el.addEventListener('mouseenter', () => document.body.classList.add('cursor-hover'));
     el.addEventListener('mouseleave', () => {
@@ -326,51 +398,37 @@
       const rect = el.getBoundingClientRect();
       const x = e.clientX - rect.left - rect.width / 2;
       const y = e.clientY - rect.top - rect.height / 2;
-      el.style.transform = `translate(${x * 0.18}px, ${y * 0.18}px)`;
+      el.style.transform = `translate(${x * 0.16}px, ${y * 0.16}px)`;
     });
   });
 
-  // --- Sound Toggle ---
-  const soundBtn = document.getElementById('sound-btn');
-  soundBtn.addEventListener('click', () => {
-    state.audioActive = !state.audioActive;
-    if (state.audioActive) {
-      initAudio();
-      if (audioCtx && audioCtx.state === 'suspended') {
-        audioCtx.resume();
-      }
-      soundBtn.classList.add('playing');
-      soundBtn.querySelector('.sound-label').textContent = 'SOUND [ON]';
-      playChime(660);
-    } else {
-      soundBtn.classList.remove('playing');
-      soundBtn.querySelector('.sound-label').textContent = 'SOUND [OFF]';
-      if (audioCtx) {
-        audioCtx.suspend();
-      }
-    }
-  });
-
-  // --- 3D Mode Selector Buttons ---
-  const modeButtons = document.querySelectorAll('.mode-btn');
-  const modeMap = { iridescent: 0, cyber: 1, liquid: 2, matrix: 3 };
+  // --- Interactive HUD Controls ---
+  const modeButtons = document.querySelectorAll('.hud-mode-btn');
+  const modeIndex = { prismatic: 0, celestial: 1, cybernetic: 2, vortex: 3 };
 
   modeButtons.forEach((btn) => {
     btn.addEventListener('click', () => {
       modeButtons.forEach((b) => b.classList.remove('active'));
       btn.classList.add('active');
-      const modeKey = btn.dataset.mode;
-      state.mode = modeKey;
-      shaderUniforms.uMode.value = modeMap[modeKey] || 0;
-      
-      // Wireframe toggle for cyber mode
-      shaderMaterial.wireframe = (modeKey === 'cyber');
-      
-      playChime(520);
 
-      // Ripple punch on mesh
+      const mode = btn.dataset.mode;
+      const geo = btn.dataset.geometry;
+
+      state.shaderMode = mode;
+      state.geometryType = geo;
+
+      // Switch geometry seamlessly
+      if (geometries[geo]) {
+        coreMesh.geometry = geometries[geo];
+      }
+
+      shaderUniforms.uMode.value = modeIndex[mode] || 0;
+      coreMaterial.wireframe = (mode === 'cybernetic');
+
+      triggerChime(659.25, 0.8);
+
       gsap.to(shaderUniforms.uDistort, {
-        value: 1.8,
+        value: state.turbulence * 1.8,
         duration: 0.35,
         yoyo: true,
         repeat: 1,
@@ -379,119 +437,213 @@
     });
   });
 
-  // --- Speed Toggle ---
-  const speedBtn = document.getElementById('speed-toggle');
-  const speeds = [1.0, 1.8, 2.5, 0.4];
-  let speedIdx = 0;
+  // Turbulence Slider
+  const turbSlider = document.getElementById('turbulence-range');
+  if (turbSlider) {
+    turbSlider.addEventListener('input', (e) => {
+      state.turbulence = parseFloat(e.target.value);
+      shaderUniforms.uDistort.value = state.turbulence;
+    });
+  }
 
-  speedBtn.addEventListener('click', () => {
-    speedIdx = (speedIdx + 1) % speeds.length;
-    state.speedMultiplier = speeds[speedIdx];
-    speedBtn.textContent = `${state.speedMultiplier.toFixed(1)}X`;
-    playChime(440 * state.speedMultiplier);
-  });
+  // Particle Density Toggle
+  const densityBtn = document.getElementById('density-toggle');
+  if (densityBtn) {
+    densityBtn.addEventListener('click', () => {
+      if (state.particleDensity === 'hyper') {
+        state.particleDensity = 'luminous';
+        densityBtn.textContent = 'LUMINOUS (2K)';
+        particleMat.size = 0.06;
+        particleMat.opacity = 0.85;
+      } else {
+        state.particleDensity = 'hyper';
+        densityBtn.textContent = 'HYPER (4K)';
+        particleMat.size = 0.038;
+        particleMat.opacity = 0.55;
+      }
+      triggerChime(440, 0.4);
+    });
+  }
 
-  // --- Supercharge Mesh Action ---
-  const superchargeBtn = document.getElementById('explode-trigger');
-  if (superchargeBtn) {
-    superchargeBtn.addEventListener('click', () => {
-      playChime(880);
+  // Audio Toggle
+  const audioToggle = document.getElementById('audio-toggle');
+  if (audioToggle) {
+    audioToggle.addEventListener('click', () => {
+      state.audioActive = !state.audioActive;
+      if (state.audioActive) {
+        initSpatialAudio();
+        if (audioCtx && audioCtx.state === 'suspended') {
+          audioCtx.resume();
+        }
+        audioToggle.classList.add('playing');
+        audioToggle.querySelector('.sound-text').textContent = 'AUDIO: LIVE';
+        triggerChime(587.33);
+      } else {
+        audioToggle.classList.remove('playing');
+        audioToggle.querySelector('.sound-text').textContent = 'AUDIO: MUTED';
+        if (audioCtx) {
+          audioCtx.suspend();
+        }
+      }
+    });
+  }
+
+  // Supermassive Warp Button
+  const warpBtn = document.getElementById('warp-speed-btn');
+  if (warpBtn) {
+    warpBtn.addEventListener('click', () => {
+      triggerChime(880, 2.5);
+      state.isWarping = true;
+
       gsap.to(camera.position, {
-        z: 4.8,
-        duration: 0.6,
-        yoyo: true,
-        repeat: 1,
-        ease: 'expo.out'
-      });
-      gsap.to(shaderUniforms.uDistort, {
-        value: 3.5,
+        z: 3.8,
         duration: 0.8,
+        ease: 'power3.in',
         yoyo: true,
         repeat: 1,
-        ease: 'elastic.out(1, 0.3)'
+        onComplete: () => {
+          state.isWarping = false;
+        }
+      });
+
+      gsap.to(shaderUniforms.uDistort, {
+        value: 4.5,
+        duration: 0.9,
+        yoyo: true,
+        repeat: 1,
+        ease: 'elastic.out(1, 0.25)'
       });
     });
   }
 
-  // --- Scroll Driven Spatial Transitions (GSAP ScrollTrigger) ---
+  // Hovering on work items reacts on 3D Core
+  const workRows = document.querySelectorAll('.work-row');
+  workRows.forEach((row) => {
+    row.addEventListener('mouseenter', () => {
+      const mode = row.dataset.meshTrigger;
+      if (mode && modeIndex[mode] !== undefined) {
+        shaderUniforms.uMode.value = modeIndex[mode];
+        triggerChime(523.25, 0.5);
+      }
+      gsap.to(coreMesh.scale, { x: 1.15, y: 1.15, z: 1.15, duration: 0.4, ease: 'power2.out' });
+    });
+    row.addEventListener('mouseleave', () => {
+      shaderUniforms.uMode.value = modeIndex[state.shaderMode] || 0;
+      gsap.to(coreMesh.scale, { x: 1.0, y: 1.0, z: 1.0, duration: 0.4, ease: 'power2.out' });
+    });
+  });
+
+  // --- Scroll Choreography (GSAP ScrollTrigger) ---
   if (window.gsap && window.ScrollTrigger) {
     gsap.registerPlugin(ScrollTrigger);
 
-    // Camera travels & rotates organically with user scroll
-    gsap.to(morphMesh.position, {
+    // Hero -> Manifesto: camera travels & core moves right
+    gsap.to(coreMesh.position, {
       scrollTrigger: {
-        trigger: '#work',
+        trigger: '#manifesto',
         start: 'top bottom',
-        end: 'bottom top',
+        end: 'center center',
         scrub: 1.2
       },
-      x: 1.8,
-      y: -0.3,
-      z: -1.0
+      x: 1.9,
+      y: -0.2,
+      z: -0.5
     });
 
-    gsap.to(morphMesh.rotation, {
+    // Manifesto -> Works: core scales up and centers
+    gsap.to(coreMesh.position, {
       scrollTrigger: {
-        trigger: '#services',
+        trigger: '#works',
         start: 'top bottom',
-        end: 'bottom top',
-        scrub: 1.5
+        end: 'bottom bottom',
+        scrub: 1.4
       },
-      y: Math.PI * 1.5,
-      x: 0.6
+      x: -1.7,
+      y: 0.3,
+      z: 0.4
     });
 
-    gsap.to(morphMesh.position, {
+    // Experiments: ring group spin acceleration
+    gsap.to(ringGroup.rotation, {
       scrollTrigger: {
-        trigger: '#about',
+        trigger: '#experiments',
         start: 'top bottom',
         end: 'bottom top',
-        scrub: 1.2
+        scrub: 2
       },
-      x: -1.6,
-      y: 0.4,
-      z: 0.5
+      z: Math.PI * 2,
+      x: Math.PI
     });
   }
 
-  // --- Animation Loop ---
+  // --- Animation & Physics Engine Loop ---
   let clock = new THREE.Clock();
+  let frameCount = 0;
+  let lastTime = performance.now();
+  const fpsEl = document.getElementById('fps-counter');
 
-  function animate() {
-    requestAnimationFrame(animate);
+  function renderLoop() {
+    requestAnimationFrame(renderLoop);
 
     const delta = clock.getDelta();
-    const elapsedTime = clock.getElapsedTime() * state.speedMultiplier;
+    const elapsed = clock.getElapsedTime();
 
-    // Smooth Mouse Interpolation (Lerp)
-    state.mouse.x += (state.mouse.targetX - state.mouse.x) * 0.05;
-    state.mouse.y += (state.mouse.targetY - state.mouse.y) * 0.05;
+    // FPS Meter
+    frameCount++;
+    const now = performance.now();
+    if (now - lastTime >= 1000) {
+      if (fpsEl) fpsEl.textContent = frameCount;
+      frameCount = 0;
+      lastTime = now;
+    }
+
+    // Smooth Mouse Velocity Interpolation
+    state.mouse.x += (state.mouse.targetX - state.mouse.x) * 0.06;
+    state.mouse.y += (state.mouse.targetY - state.mouse.y) * 0.06;
 
     // Update Uniforms
-    shaderUniforms.uTime.value = elapsedTime;
+    shaderUniforms.uTime.value = elapsed;
     shaderUniforms.uMouse.value.set(state.mouse.x, state.mouse.y);
 
-    // Mesh Rotations
-    morphMesh.rotation.y += 0.005 * state.speedMultiplier + state.mouse.x * 0.02;
-    morphMesh.rotation.x += 0.003 * state.speedMultiplier + state.mouse.y * 0.02;
+    // Core Mesh Rotations
+    const warpMult = state.isWarping ? 4.0 : 1.0;
+    coreMesh.rotation.y += (0.007 + state.mouse.x * 0.02) * warpMult;
+    coreMesh.rotation.x += (0.005 + state.mouse.y * 0.02) * warpMult;
 
-    // Background Particle Field Swirl
-    particleSystem.rotation.y = elapsedTime * 0.02;
-    particleSystem.rotation.x = Math.sin(elapsedTime * 0.015) * 0.15;
+    // Rings Rotation
+    ring1.rotation.z += 0.006 * warpMult;
+    ring2.rotation.x += 0.004 * warpMult;
 
-    // Render Scene
+    // Cosmic Particles Gravitational Vortex
+    const positions = particleGeo.attributes.position.array;
+    for (let i = 0; i < particleCount; i++) {
+      const i3 = i * 3;
+      // Drift & orbital swirl
+      const ox = originalPositions[i3];
+      const oy = originalPositions[i3 + 1];
+      const oz = originalPositions[i3 + 2];
+
+      const angle = elapsed * 0.15 + (i * 0.002);
+      positions[i3] = ox * Math.cos(angle) - oz * Math.sin(angle) + state.mouse.x * 0.8;
+      positions[i3 + 2] = ox * Math.sin(angle) + oz * Math.cos(angle) + state.mouse.y * 0.8;
+      positions[i3 + 1] = oy + Math.sin(elapsed + i) * 0.12;
+    }
+    particleGeo.attributes.position.needsUpdate = true;
+
+    // Render WebGL
     renderer.render(scene, camera);
 
-    // Custom Cursor Smoothing
-    circleX += (cursorX - circleX) * 0.16;
-    circleY += (cursorY - circleY) * 0.16;
-    cursorDot.style.transform = `translate3d(${cursorX}px, ${cursorY}px, 0) translate(-50%, -50%)`;
-    cursorCircle.style.transform = `translate3d(${circleX}px, ${circleY}px, 0) translate(-50%, -50%)`;
+    // Smooth Custom Cursor
+    folX += (curX - folX) * 0.16;
+    folY += (curY - folY) * 0.16;
+    if (cursorCore) cursorCore.style.transform = `translate3d(${curX}px, ${curY}px, 0) translate(-50%, -50%)`;
+    if (cursorFollower) cursorFollower.style.transform = `translate3d(${folX}px, ${folY}px, 0) translate(-50%, -50%)`;
+    if (cursorGlow) cursorGlow.style.transform = `translate3d(${curX}px, ${curY}px, 0) translate(-50%, -50%)`;
   }
 
-  animate();
+  renderLoop();
 
-  // --- Window Resize Handling ---
+  // --- Window Resize ---
   window.addEventListener('resize', () => {
     camera.aspect = window.innerWidth / window.innerHeight;
     camera.updateProjectionMatrix();
@@ -499,7 +651,7 @@
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
   });
 
-  console.log('%c LUSĪON CREATIVE LAB %c Ready • 60 FPS WebGL Engine Active ', 
-    'background: #a855f7; color: #fff; padding: 4px 8px; border-radius: 4px 0 0 4px; font-weight: bold;', 
-    'background: #0f172a; color: #38bdf8; padding: 4px 8px; border-radius: 0 4px 4px 0;');
+  console.log('%c AETHERIA LAB %c 3D Spatial Computing Engine Initialized (60 FPS) ', 
+    'background: #38bdf8; color: #000; padding: 4px 8px; font-weight: bold; border-radius: 4px 0 0 4px;', 
+    'background: #050508; color: #c084fc; padding: 4px 8px; border-radius: 0 4px 4px 0;');
 })();

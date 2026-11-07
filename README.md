@@ -1,52 +1,53 @@
-# ❖ LUSĪON • Creative 3D Digital Studio
+# ✦ AETHERIA // Spatial Computing & Creative Engineering Studio
 
-An immersive, high-performance 3D experiential website inspired by **[Lusion.co](https://lusion.co)** and cutting-edge creative development standards (Awwwards SOTD).
-
-Built with **Three.js**, custom **GLSL Shaders**, **GSAP ScrollTrigger**, and the **Web Audio API**.
+An original, high-fidelity 3D experiential web experience designed to set a new benchmark in creative web development. Inspired by elite studios like **Lusion** and **Active Theory**, but with **100% original branding, bespoke 3D geometry choreography, and unique GLSL shaders**.
 
 ---
 
-## ✨ Key Features & Interactive Physics
+## 🌟 What Makes AETHERIA Unique
 
-- **Organic 3D Iridescent Mesh:** Subdivided icosahedron with procedural Simplex Noise vertex displacement.
-- **4 Real-time Shader Modes:**
-  - 🌈 **Iridescent Chrome:** Lusion's signature rainbow Fresnel glare reacting to view vectors.
-  - ⚡ **Cyber Wireframe:** High-frequency glowing spatial vector grid.
-  - 💧 **Liquid Glass:** Translucent refractive dispersion.
-  - 🌌 **Quantum Particle:** Volumetric point-cloud hologram.
-- **Mouse & Gesture Physics:** Real-time mesh deformation and camera parallax reacting to cursor velocity.
-- **Scroll-Driven Camera Choreography:** GSAP ScrollTrigger moves the 3D entity organically along with page sections.
-- **Custom Magnetic Cursor:** Cursor smoothing and magnetic attraction on interactive targets.
-- **Procedural Audio Synthesizer:** Atmospheric sub-drone and interactive feedback chimes via pure Web Audio API (zero external sound files needed).
-- **Zero-Build Dependency:** Pure native HTML, CSS, and vanilla JS. Runs immediately in any modern browser!
+- **Original Multi-Layered 3D Core:**
+  - Dynamic central geometry switchable between **Torus Knot**, **Celestial Sphere**, **Torus Lattice**, and **Geodesic Icosahedron**.
+  - **Procedural Simplex Noise (3D):** Vertex displacement wave physics reacting dynamically to cursor acceleration.
+  - **Concentric Orbital Rings:** Independent counter-rotating celestial rings providing depth and spatial scale.
+  - **Gravitational Cosmic Particle Field:** 4,000+ interactive particles that swirl into a vortex following cursor position.
+- **4 Custom GLSL Shader Architectures:**
+  - 🌈 **Prismatic Core:** Bespoke chromatic aberration and spectral Fresnel color cycling.
+  - 💧 **Celestial Glass:** Translucent refractive material with double-pass dispersion.
+  - ⚡ **Cybernetic Lattice:** High-frequency glowing wireframe with vertex pulse modulation.
+  - 🌌 **Vortex Singularity:** Pulsing gravitational sink with luminous event horizon.
+- **Interactive HUD Controller:**
+  - Live real-time shader switcher.
+  - Live turbulence slider affecting mesh wave frequency.
+  - Particle density toggle (Luminous 2K vs Hyper 4K).
+  - Supermassive Warp mode trigger.
+- **Work Item 3D Reactive Hover:**
+  - Hovering over projects (*Sonder Spatials*, *NeuroSync AI*, *Chroma Zero*, *Kinesis Runtime*) morphs the 3D entity into that project's thematic visual signature.
+- **Spatial Audio Synthesizer (Zero External MP3s):**
+  - Polyphonic ambient harmonic pad (D minor chord) generated via Web Audio API.
+  - Pitch & lowpass filter cutoff dynamically modulate based on horizontal & vertical cursor coordinates.
+- **GSAP ScrollTrigger Choreography:**
+  - As the user scrolls through *Manifesto*, *Works*, *Experiments*, and *Connect*, the camera smoothly glides and angles through 3D space.
 
 ---
 
-## 🚀 Quick Start / How to Run
+## 🛠️ Tech Stack
+- **Three.js (r128)**
+- **GLSL Shaders** (Simplex 3D Noise + Chromatic Fresnel)
+- **GSAP 3 & ScrollTrigger**
+- **Web Audio API**
+- **Syne, Space Grotesk, Plus Jakarta Sans**
 
-### Option 1: Open Directly
-Simply open `index.html` in your favorite web browser (Chrome, Edge, Firefox, Brave, Safari).
+---
 
-### Option 2: Run Local Dev Server
+## 🚀 How to Run Locally
+Open `index.html` directly in any modern browser, or run:
 ```bash
-# Using Python
 python3 -m http.server 3000
-
-# Using Node / npx
-npx serve .
 ```
 Then visit `http://localhost:3000`.
 
 ---
 
-## 📦 Tech Stack
-- **Three.js (r128)**
-- **GLSL Shaders** (Simplex 3D Noise + Fresnel)
-- **GSAP & ScrollTrigger**
-- **Web Audio API**
-- **Plus Jakarta Sans / Syne / Space Grotesk**
-
----
-
 ## 📄 License
-MIT License. Inspired by Lusion and creative developers worldwide.
+MIT License. Crafted with creative code and passion.
