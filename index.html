@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LUSĪON • Creative 3D Digital Studio</title>
+  <meta name="description" content="Next-generation creative studio inspired by Lusion.co with real-time 3D WebGL physics, generative shaders, and kinetic interactions.">
+  
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;700&family=Syne:wght@600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- Custom Magnetic Cursor -->
+  <div class="cursor-dot" id="cursor-dot"></div>
+  <div class="cursor-circle" id="cursor-circle"></div>
+
+  <!-- Background 3D Canvas -->
+  <div id="webgl-container"></div>
+  <div class="noise-overlay"></div>
+  <div class="ambient-glow"></div>
+
+  <!-- Main Navigation -->
+  <header class="header">
+    <div class="logo-wrap" data-magnetic>
+      <a href="#" class="logo">
+        <span class="logo-mark">❖</span>
+        <span class="logo-text">LUSĪON<span class="dot">.</span>LAB</span>
+      </a>
+    </div>
+
+    <nav class="nav">
+      <a href="#work" class="nav-link" data-magnetic>Work<sup>(04)</sup></a>
+      <a href="#services" class="nav-link" data-magnetic>Expertise</a>
+      <a href="#about" class="nav-link" data-magnetic>Studio</a>
+      <a href="#contact" class="nav-link" data-magnetic>Contact</a>
+    </nav>
+
+    <div class="header-actions">
+      <button class="sound-toggle" id="sound-btn" title="Toggle Atmospheric Sound" data-magnetic>
+        <span class="sound-bars">
+          <span class="bar"></span>
+          <span class="bar"></span>
+          <span class="bar"></span>
+        </span>
+        <span class="sound-label">SOUND [OFF]</span>
+      </button>
+      <a href="#contact" class="btn-pill" data-magnetic>
+        <span>Let's Talk</span>
+        <i class="fa-solid fa-arrow-up-right"></i>
+      </a>
+    </div>
+  </header>
+
+  <!-- Main Content Wrapper -->
+  <main class="content-wrapper">
+    <!-- Hero Section -->
+    <section class="hero-section" id="hero">
+      <div class="hero-badge" data-magnetic>
+        <span class="badge-pulse"></span>
+        <span>EXPERIENTIAL 3D & CREATIVE DEV</span>
+      </div>
+
+      <div class="hero-title-wrap">
+        <h1 class="hero-title">
+          <span class="line"><span class="word">BEYOND</span> <span class="word accent-text">DIMENSIONS</span></span>
+          <span class="line"><span class="word">SHAPING</span> <span class="word outline-text">DIGITAL</span></span>
+          <span class="line"><span class="word">SENSATIONS</span></span>
+        </h1>
+      </div>
+
+      <div class="hero-bottom-grid">
+        <div class="hero-col bio-col">
+          <p class="hero-desc">
+            We merge real-time 3D physics, generative shaders, and intuitive ergonomics to engineer memorable visual realities.
+          </p>
+        </div>
+
+        <div class="hero-col cta-col">
+          <div class="interaction-hint">
+            <div class="mouse-icon">
+              <span class="wheel"></span>
+            </div>
+            <span>DRAG / SCROLL TO DISTORT 3D MESH</span>
+          </div>
+        </div>
+
+        <div class="hero-col stat-col">
+          <div class="quick-metric">
+            <span class="metric-num">60<small>FPS</small></span>
+            <span class="metric-label">Real-time WebGL Pipeline</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Interactive 3D Controller Bar -->
+    <section class="controller-bar">
+      <div class="controller-tag">3D MATERIAL SHADER:</div>
+      <div class="mode-buttons">
+        <button class="mode-btn active" data-mode="iridescent" data-magnetic>Iridescent Chrome</button>
+        <button class="mode-btn" data-mode="cyber" data-magnetic>Cyber Wireframe</button>
+        <button class="mode-btn" data-mode="liquid" data-magnetic>Liquid Glass</button>
+        <button class="mode-btn" data-mode="matrix" data-magnetic>Quantum Particle</button>
+      </div>
+      <div class="physics-speed">
+        <span>TURBULENCE:</span>
+        <button class="speed-toggle" id="speed-toggle" data-magnetic>1.0X</button>
+      </div>
+    </section>
+
+    <!-- Selected Works Section -->
+    <section class="works-section" id="work">
+      <div class="section-header">
+        <div class="section-tag">01 // SELECTED WORKS</div>
+        <h2 class="section-title">CREATIVE EXPLORATIONS</h2>
+        <p class="section-sub">Pushing WebGL and spatial experiences past ordinary interface boundaries.</p>
+      </div>
+
+      <div class="projects-grid">
+        <!-- Project 1 -->
+        <article class="project-card" data-project="01" data-magnetic-card>
+          <div class="card-inner">
+            <div class="card-glow" style="--card-color: #8b5cf6;"></div>
+            <div class="card-head">
+              <span class="project-num">01</span>
+              <span class="project-year">2026</span>
+            </div>
+            <div class="card-body">
+              <div class="project-tags">
+                <span class="tag">THREE.JS</span>
+                <span class="tag">GLSL SHADERS</span>
+                <span class="tag">R3F</span>
+              </div>
+              <h3 class="project-name">Aether Morphic</h3>
+              <p class="project-snippet">Generative fluid simulation with real-time sound reactive particles and organic surface displacement.</p>
+            </div>
+            <div class="card-foot">
+              <span class="view-btn">EXPLORE EXPERIMENT <i class="fa-solid fa-arrow-right"></i></span>
+            </div>
+          </div>
+        </article>
+
+        <!-- Project 2 -->
+        <article class="project-card" data-project="02" data-magnetic-card>
+          <div class="card-inner">
+            <div class="card-glow" style="--card-color: #06b6d4;"></div>
+            <div class="card-head">
+              <span class="project-num">02</span>
+              <span class="project-year">2026</span>
+            </div>
+            <div class="card-body">
+              <div class="project-tags">
+                <span class="tag">WEBGPU</span>
+                <span class="tag">PHYSICS</span>
+                <span class="tag">AI VOXELS</span>
+              </div>
+              <h3 class="project-name">Chronos Spatial</h3>
+              <p class="project-snippet">Zero-latency spatial time-capsule interface leveraging WebGPU compute shaders and multi-agent interaction.</p>
+            </div>
+            <div class="card-foot">
+              <span class="view-btn">EXPLORE EXPERIMENT <i class="fa-solid fa-arrow-right"></i></span>
+            </div>
+          </div>
+        </article>
+
+        <!-- Project 3 -->
+        <article class="project-card" data-project="03" data-magnetic-card>
+          <div class="card-inner">
+            <div class="card-glow" style="--card-color: #f43f5e;"></div>
+            <div class="card-head">
+              <span class="project-num">03</span>
+              <span class="project-year">2025</span>
+            </div>
+            <div class="card-body">
+              <div class="project-tags">
+                <span class="tag">RAYMARCHING</span>
+                <span class="tag">CANVAS 3D</span>
+                <span class="tag">AUDIO-SYNTH</span>
+              </div>
+              <h3 class="project-name">Vesper Lumina</h3>
+              <p class="project-snippet">Fractal raymarched universe rendering complex signed distance fields (SDF) at constant 60 FPS.</p>
+            </div>
+            <div class="card-foot">
+              <span class="view-btn">EXPLORE EXPERIMENT <i class="fa-solid fa-arrow-right"></i></span>
+            </div>
+          </div>
+        </article>
+
+        <!-- Project 4 -->
+        <article class="project-card" data-project="04" data-magnetic-card>
+          <div class="card-inner">
+            <div class="card-glow" style="--card-color: #10b981;"></div>
+            <div class="card-head">
+              <span class="project-num">04</span>
+              <span class="project-year">2025</span>
+            </div>
+            <div class="card-body">
+              <div class="project-tags">
+                <span class="tag">METAVERSE</span>
+                <span class="tag">SPLINE</span>
+                <span class="tag">KINETIC UI</span>
+              </div>
+              <h3 class="project-name">Hyperion Engine</h3>
+              <p class="project-snippet">Next-gen e-commerce flagship prototype featuring tactile product physics and real-time customizer.</p>
+            </div>
+            <div class="card-foot">
+              <span class="view-btn">EXPLORE EXPERIMENT <i class="fa-solid fa-arrow-right"></i></span>
+            </div>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <!-- Services / Capabilities -->
+    <section class="services-section" id="services">
+      <div class="section-header">
+        <div class="section-tag">02 // CAPABILITIES</div>
+        <h2 class="section-title">ENGINEERING SENSATIONS</h2>
+      </div>
+
+      <div class="services-accordion">
+        <div class="service-item" data-magnetic-row>
+          <div class="service-meta">01</div>
+          <div class="service-title">Real-Time 3D WebGL / WebGPU</div>
+          <div class="service-desc">Creating bespoke shaders, high-poly geometry optimization, and interactive experiences running natively in the browser.</div>
+          <div class="service-icon"><i class="fa-solid fa-cube"></i></div>
+        </div>
+
+        <div class="service-item" data-magnetic-row>
+          <div class="service-meta">02</div>
+          <div class="service-title">Kinetic Typography & Motion Design</div>
+          <div class="service-desc">Micro-interactions, magnetic magnetic states, GSAP-driven choreography, and smooth page transit pipelines.</div>
+          <div class="service-icon"><i class="fa-solid fa-wave-square"></i></div>
+        </div>
+
+        <div class="service-item" data-magnetic-row>
+          <div class="service-meta">03</div>
+          <div class="service-title">AI & Agentic Interface Architectures</div>
+          <div class="service-desc">Generative UI widgets, contextual workspace design, and seamless bridge between LLM intelligences and tactile frontends.</div>
+          <div class="service-icon"><i class="fa-solid fa-microchip"></i></div>
+        </div>
+
+        <div class="service-item" data-magnetic-row>
+          <div class="service-meta">04</div>
+          <div class="service-title">Creative Direction & Soundscapes</div>
+          <div class="service-desc">Synthesized ambient Web Audio soundscapes that give digital elements weight, tactile response, and physical presence.</div>
+          <div class="service-icon"><i class="fa-solid fa-volume-high"></i></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Studio / Philosophy -->
+    <section class="about-section" id="about">
+      <div class="about-grid">
+        <div class="about-left">
+          <div class="section-tag">03 // PHILOSOPHY</div>
+          <h2 class="about-headline">CODE IS A MEDIUM FOR EMOTION AND GRAVITY.</h2>
+        </div>
+        <div class="about-right">
+          <p class="about-text">
+            Inspired by pioneering digital studios like Lusion and Active Theory, we believe web experiences shouldn't just be viewed—they should be felt. By fusing mathematics, GLSL vertex displacement, and tactile responsive design, we bring flat websites to life.
+          </p>
+          <div class="spec-list">
+            <div class="spec-row">
+              <span class="spec-label">Tech Foundation</span>
+              <span class="spec-val">Three.js • GLSL • GSAP • Web Audio API</span>
+            </div>
+            <div class="spec-row">
+              <span class="spec-label">Frame Budget</span>
+              <span class="spec-val">16.6ms / frame (Strict 60 FPS Target)</span>
+            </div>
+            <div class="spec-row">
+              <span class="spec-label">Vibe Level</span>
+              <span class="spec-val">Iridescent Futuristic Aesthetics</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Contact / CTA -->
+    <section class="contact-section" id="contact">
+      <div class="contact-box">
+        <div class="contact-tag">04 // INITIATE TRANSMISSION</div>
+        <h2 class="contact-title">HAVE A VISION IN MIND?</h2>
+        <p class="contact-sub">Let's craft the next digital benchmark together.</p>
+
+        <div class="contact-cta-row">
+          <a href="mailto:hello@lusion-studio.dev" class="primary-cta" data-magnetic>
+            <span>START A PROJECT</span>
+            <i class="fa-solid fa-arrow-right"></i>
+          </a>
+          <button class="secondary-cta" id="explode-trigger" data-magnetic>
+            <i class="fa-solid fa-bolt"></i>
+            <span>SUPERCHARGE MESH</span>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+      <div class="footer-left">
+        <span>© 2026 LUSĪON CREATIVE LAB. ALL RIGHTS RESERVED.</span>
+      </div>
+      <div class="footer-center">
+        <span class="status-indicator"><span class="dot-online"></span> SYSTEM: OPERATIONAL • 60 FPS</span>
+      </div>
+      <div class="footer-right">
+        <a href="https://github.com/artificialtesting088-alt" target="_blank" rel="noopener" class="footer-link" data-magnetic>GITHUB</a>
+        <a href="https://lusion.co" target="_blank" rel="noopener" class="footer-link" data-magnetic>LUSION.CO INSPIRATION</a>
+        <a href="#hero" class="footer-link back-top" data-magnetic>BACK TO TOP ↑</a>
+      </div>
+    </footer>
+  </main>
+
+  <!-- CDNs: Three.js and GSAP for performance & smooth orchestration -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+  
+  <script src="app.js"></script>
+</body>
+</html>
