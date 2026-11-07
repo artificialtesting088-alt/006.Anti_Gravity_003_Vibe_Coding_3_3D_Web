@@ -1,14 +1,18 @@
 /**
  * AETHERIA // Spatial Design & Creative Engineering Laboratory
- * High-Fidelity 3D WebGL Engine, Bespoke Shaders & Kinetic Soundscapes
- * Optimized for Visual Comfort, 60 FPS Performance & Perfect Readability
+ * High-Fidelity 3D WebGL Engine with Dual-Theme System (Dark & Light Modes)
+ * Bespoke Shaders, Dynamic Audio Synthesis & 60 FPS Performance
  */
 
 (() => {
   'use strict';
 
-  // --- Engine State ---
+  // --- Engine State & Theme Persistence ---
+  const savedTheme = localStorage.getItem('aetheria_theme') || 'dark';
+  document.documentElement.setAttribute('data-theme', savedTheme);
+
   const state = {
+    theme: savedTheme, // 'dark' | 'light'
     mouse: { x: 0, y: 0, targetX: 0, targetY: 0 },
     geometryType: 'knot',
     shaderMode: 'prismatic',
@@ -84,26 +88,26 @@
   renderer.setSize(window.innerWidth, window.innerHeight);
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 1.05;
+  renderer.toneMappingExposure = state.theme === 'light' ? 1.2 : 1.05;
   container.appendChild(renderer.domElement);
 
-  // --- Soft Atmospheric Lighting (Subtle, Non-glaring) ---
-  const ambientLight = new THREE.AmbientLight(0xffffff, 0.55);
+  // --- Atmospheric Lighting with Dynamic Theme Adaptation ---
+  const ambientLight = new THREE.AmbientLight(0xffffff, state.theme === 'light' ? 0.85 : 0.55);
   scene.add(ambientLight);
 
-  const keyLight = new THREE.PointLight(0x38bdf8, 2.2, 25);
+  const keyLight = new THREE.PointLight(0x38bdf8, state.theme === 'light' ? 2.6 : 2.2, 25);
   keyLight.position.set(6, 4, 4);
   scene.add(keyLight);
 
-  const fillLight = new THREE.PointLight(0xa78bfa, 2.0, 25);
+  const fillLight = new THREE.PointLight(0xa78bfa, state.theme === 'light' ? 2.4 : 2.0, 25);
   fillLight.position.set(-6, -3, 3);
   scene.add(fillLight);
 
-  const rimLight = new THREE.PointLight(0x34d399, 1.5, 20);
+  const rimLight = new THREE.PointLight(0x34d399, state.theme === 'light' ? 1.8 : 1.5, 20);
   rimLight.position.set(0, 5, -4);
   scene.add(rimLight);
 
-  // --- GLSL Shaders (Soft Pearlescent, Easy on the Eyes) ---
+  // --- GLSL Shaders (Dual-Theme Pearlescent & Alabaster) ---
   const vertexShader = `
     uniform float uTime;
     uniform float uDistort;
@@ -113,7 +117,6 @@
     varying vec2 vUv;
     varying float vDisplacement;
 
-    // Simplex Noise 3D Implementation
     vec3 mod289(vec3 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
     vec4 mod289(vec4 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
     vec4 permute(vec4 x) { return mod289(((x*34.0)+1.0)*x); }
@@ -166,7 +169,6 @@
       vUv = uv;
       vNormal = normalize(normalMatrix * normal);
 
-      // Smooth organic wave (low-frequency, no harsh spikes)
       vec3 coords = normal * 1.2 + vec3(uTime * 0.3);
       float noise = snoise(coords);
 
@@ -183,15 +185,14 @@
   const fragmentShader = `
     uniform float uTime;
     uniform int uMode; // 0: Satin Pearl, 1: Icy Glass, 2: Cyber Wire, 3: Cosmic Core
+    uniform float uIsLight; // 0.0 for Dark Mode, 1.0 for Light Mode
     varying vec3 vNormal;
     varying vec3 vPosition;
     varying vec2 vUv;
     varying float vDisplacement;
 
-    // Soft, Elegant Cosine Color Palette (No Harsh Neon Clashing)
     vec3 softPalette(float t) {
-      // Gentle pastel tones: lavender, soft cyan, muted champagne
-      vec3 a = vec3(0.35, 0.38, 0.45);
+      vec3 a = vec3(0.40, 0.42, 0.48);
       vec3 b = vec3(0.25, 0.25, 0.30);
       vec3 c = vec3(0.8, 0.8, 0.8);
       vec3 d = vec3(0.15, 0.40, 0.65);
@@ -204,34 +205,47 @@
       fresnel = clamp(1.0 - fresnel, 0.0, 1.0);
       fresnel = pow(fresnel, 2.8);
 
+      // Dark Mode Base vs Light Mode Alabaster Base
+      vec3 darkBase = vec3(0.06, 0.07, 0.11);
+      vec3 lightBase = vec3(0.92, 0.94, 0.98);
+      vec3 base = mix(darkBase, lightBase, uIsLight);
+
       if (uMode == 0) {
-        // --- 0: Satin Pearl (Comfortable Obsidian-Pearl with Soft Highlights) ---
+        // --- 0: Satin Pearl Mode ---
         float seed = fresnel * 0.9 + vDisplacement * 0.6 + uTime * 0.12;
         vec3 spectralColor = softPalette(seed);
         
-        // Deep velvety titanium base
-        vec3 base = vec3(0.06, 0.07, 0.11);
-        vec3 finalColor = mix(base, spectralColor, fresnel * 1.1 + 0.08);
-        finalColor += vec3(0.4, 0.7, 0.9) * pow(fresnel, 5.0) * 0.45; // Subtle soft sheen
-        gl_FragColor = vec4(finalColor, 0.92);
+        vec3 col = mix(base, spectralColor, fresnel * 1.1 + (uIsLight * 0.15));
+        float glareIntensity = mix(0.45, 0.75, uIsLight);
+        col += vec3(0.4, 0.7, 0.9) * pow(fresnel, 5.0) * glareIntensity;
+        gl_FragColor = vec4(col, mix(0.92, 0.96, uIsLight));
 
       } else if (uMode == 1) {
-        // --- 1: Icy Glass (Cool Frosted Glaze, Calm on the Eyes) ---
-        vec3 glass = vec3(0.05, 0.08, 0.12);
+        // --- 1: Icy Glass Mode ---
+        vec3 glassDark = vec3(0.05, 0.08, 0.12);
+        vec3 glassLight = vec3(0.88, 0.95, 0.99);
+        vec3 glass = mix(glassDark, glassLight, uIsLight);
+
         glass += vec3(0.2, 0.6, 0.85) * pow(fresnel, 2.0);
         glass += vec3(0.5, 0.8, 0.7) * pow(fresnel, 4.0) * 0.5;
-        gl_FragColor = vec4(glass, 0.75);
+        gl_FragColor = vec4(glass, mix(0.75, 0.85, uIsLight));
 
       } else if (uMode == 2) {
-        // --- 2: Cyber Wire (Subtle Violet Grid) ---
+        // --- 2: Cyber Wire Mode ---
         float grid = abs(sin(vUv.x * 60.0)) * abs(sin(vUv.y * 60.0));
-        vec3 cyber = mix(vec3(0.06, 0.06, 0.1), vec3(0.3, 0.6, 0.9), pow(grid, 0.15));
+        vec3 cyberDark = mix(vec3(0.06, 0.06, 0.1), vec3(0.3, 0.6, 0.9), pow(grid, 0.15));
+        vec3 cyberLight = mix(vec3(0.9, 0.92, 0.96), vec3(0.1, 0.5, 0.85), pow(grid, 0.15));
+        vec3 cyber = mix(cyberDark, cyberLight, uIsLight);
+
         cyber += vec3(0.6, 0.3, 0.8) * fresnel;
         gl_FragColor = vec4(cyber, 0.85);
 
       } else {
-        // --- 3: Cosmic Core (Warm Amber & Rose Violet Glow) ---
-        vec3 warmBase = vec3(0.08, 0.06, 0.1);
+        // --- 3: Cosmic Core Mode ---
+        vec3 warmBaseDark = vec3(0.08, 0.06, 0.1);
+        vec3 warmBaseLight = vec3(0.96, 0.92, 0.94);
+        vec3 warmBase = mix(warmBaseDark, warmBaseLight, uIsLight);
+
         vec3 warmGlow = mix(vec3(0.7, 0.3, 0.5), vec3(0.9, 0.5, 0.3), fresnel);
         vec3 col = mix(warmBase, warmGlow, fresnel * 1.2 + 0.1);
         gl_FragColor = vec4(col, 0.9);
@@ -241,9 +255,10 @@
 
   const shaderUniforms = {
     uTime: { value: 0 },
-    uDistort: { value: 0.65 }, // Balanced distortion (smooth, not spiky)
+    uDistort: { value: 0.65 },
     uMouse: { value: new THREE.Vector2(0, 0) },
-    uMode: { value: 0 }
+    uMode: { value: 0 },
+    uIsLight: { value: state.theme === 'light' ? 1.0 : 0.0 }
   };
 
   const coreMaterial = new THREE.ShaderMaterial({
@@ -254,7 +269,6 @@
     wireframe: false
   });
 
-  // Switchable Geometries
   const geometries = {
     knot: new THREE.TorusKnotGeometry(1.4, 0.42, 128, 32, 2, 3),
     sphere: new THREE.IcosahedronGeometry(1.8, 64),
@@ -262,37 +276,40 @@
     icosa: new THREE.IcosahedronGeometry(1.9, 16)
   };
 
-  // 3D Sculpture Group
   const sculptureGroup = new THREE.Group();
   scene.add(sculptureGroup);
 
-  // Initial Placement: Positioned gracefully to the right on desktop
   const isDesktop = window.innerWidth > 1024;
   sculptureGroup.position.set(isDesktop ? 1.5 : 0, isDesktop ? 0.1 : 0, 0);
 
   const coreMesh = new THREE.Mesh(geometries.knot, coreMaterial);
   sculptureGroup.add(coreMesh);
 
-  // --- Concentric Orbital Rings ---
-  const ring1 = new THREE.Mesh(
-    new THREE.TorusGeometry(2.6, 0.015, 16, 100),
-    new THREE.MeshBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.25, wireframe: true })
-  );
+  // Concentric Rings
+  const ring1Mat = new THREE.MeshBasicMaterial({ 
+    color: state.theme === 'light' ? 0x0284c7 : 0x38bdf8, 
+    transparent: true, 
+    opacity: state.theme === 'light' ? 0.4 : 0.25, 
+    wireframe: true 
+  });
+  const ring1 = new THREE.Mesh(new THREE.TorusGeometry(2.6, 0.015, 16, 100), ring1Mat);
   ring1.rotation.x = Math.PI * 0.35;
   sculptureGroup.add(ring1);
 
-  const ring2 = new THREE.Mesh(
-    new THREE.TorusGeometry(3.0, 0.012, 16, 100),
-    new THREE.MeshBasicMaterial({ color: 0xa78bfa, transparent: true, opacity: 0.2, wireframe: true })
-  );
+  const ring2Mat = new THREE.MeshBasicMaterial({ 
+    color: state.theme === 'light' ? 0x7c3aed : 0xa78bfa, 
+    transparent: true, 
+    opacity: state.theme === 'light' ? 0.35 : 0.2, 
+    wireframe: true 
+  });
+  const ring2 = new THREE.Mesh(new THREE.TorusGeometry(3.0, 0.012, 16, 100), ring2Mat);
   ring2.rotation.y = Math.PI * 0.4;
   sculptureGroup.add(ring2);
 
-  // --- Gentle Cosmic Particle Dust (Subtle & Non-distracting) ---
+  // Subtle Cosmic Particles
   const particleCount = 2000;
   const particleGeo = new THREE.BufferGeometry();
   const particlePositions = new Float32Array(particleCount * 3);
-  const particleOriginals = new Float32Array(particleCount * 3);
 
   for (let i = 0; i < particleCount; i++) {
     const i3 = i * 3;
@@ -300,38 +317,83 @@
     const theta = Math.random() * Math.PI * 2;
     const phi = Math.acos(Math.random() * 2 - 1);
 
-    const x = radius * Math.sin(phi) * Math.cos(theta);
-    const y = radius * Math.sin(phi) * Math.sin(theta);
-    const z = radius * Math.cos(phi);
-
-    particlePositions[i3] = x;
-    particlePositions[i3 + 1] = y;
-    particlePositions[i3 + 2] = z;
-
-    particleOriginals[i3] = x;
-    particleOriginals[i3 + 1] = y;
-    particleOriginals[i3 + 2] = z;
+    particlePositions[i3] = radius * Math.sin(phi) * Math.cos(theta);
+    particlePositions[i3 + 1] = radius * Math.sin(phi) * Math.sin(theta);
+    particlePositions[i3 + 2] = radius * Math.cos(phi);
   }
 
   particleGeo.setAttribute('position', new THREE.BufferAttribute(particlePositions, 3));
 
   const particleMat = new THREE.PointsMaterial({
     size: 0.024,
-    color: 0x94a3b8,
+    color: state.theme === 'light' ? 0x64748b : 0x94a3b8,
     transparent: true,
-    opacity: 0.35,
-    blending: THREE.AdditiveBlending
+    opacity: state.theme === 'light' ? 0.45 : 0.35,
+    blending: state.theme === 'light' ? THREE.NormalBlending : THREE.AdditiveBlending
   });
 
   const particleSystem = new THREE.Points(particleGeo, particleMat);
   scene.add(particleSystem);
+
+  // ========================================================
+  // THEME TOGGLE LOGIC (Dark & Light Mode Switcher)
+  // ========================================================
+  const themeToggleBtn = document.getElementById('theme-toggle');
+  const themeIcon = document.getElementById('theme-icon');
+  const themeLabel = document.getElementById('theme-label');
+
+  function updateThemeUI(theme) {
+    if (themeIcon) {
+      themeIcon.className = theme === 'light' ? 'fa-solid fa-sun' : 'fa-solid fa-moon';
+      themeIcon.style.transform = theme === 'light' ? 'rotate(180deg)' : 'rotate(0deg)';
+    }
+    if (themeLabel) {
+      themeLabel.textContent = theme === 'light' ? 'LIGHT' : 'DARK';
+    }
+  }
+
+  updateThemeUI(state.theme);
+
+  if (themeToggleBtn) {
+    themeToggleBtn.addEventListener('click', () => {
+      const newTheme = state.theme === 'dark' ? 'light' : 'dark';
+      state.theme = newTheme;
+      document.documentElement.setAttribute('data-theme', newTheme);
+      localStorage.setItem('aetheria_theme', newTheme);
+      updateThemeUI(newTheme);
+
+      playChime(newTheme === 'light' ? 783.99 : 523.25);
+
+      // Smoothly transition shader uniform and materials
+      gsap.to(shaderUniforms.uIsLight, {
+        value: newTheme === 'light' ? 1.0 : 0.0,
+        duration: 0.5,
+        ease: 'power2.out'
+      });
+
+      // Adjust renderer and lights
+      gsap.to(ambientLight, {
+        intensity: newTheme === 'light' ? 0.85 : 0.55,
+        duration: 0.5
+      });
+      gsap.to(renderer, {
+        toneMappingExposure: newTheme === 'light' ? 1.2 : 1.05,
+        duration: 0.5
+      });
+
+      // Update particle and ring colors
+      particleMat.color.setHex(newTheme === 'light' ? 0x64748b : 0x94a3b8);
+      particleMat.blending = newTheme === 'light' ? THREE.NormalBlending : THREE.AdditiveBlending;
+      ring1Mat.color.setHex(newTheme === 'light' ? 0x0284c7 : 0x38bdf8);
+      ring2Mat.color.setHex(newTheme === 'light' ? 0x7c3aed : 0xa78bfa);
+    });
+  }
 
   // --- Mouse & Gesture Interaction ---
   window.addEventListener('mousemove', (e) => {
     state.mouse.targetX = (e.clientX / window.innerWidth) * 2 - 1;
     state.mouse.targetY = -(e.clientY / window.innerHeight) * 2 + 1;
 
-    // Filter frequency modulation
     if (filterNode && state.audioActive && audioCtx) {
       const f = 250 + ((state.mouse.targetX + 1) * 0.5) * 600;
       filterNode.frequency.setTargetAtTime(f, audioCtx.currentTime, 0.1);
@@ -345,7 +407,7 @@
     }
   }, { passive: true });
 
-  // --- Custom Smooth Cursor ---
+  // --- Smooth Magnetic Cursor ---
   const cursorDot = document.getElementById('cursor-dot');
   const cursorRing = document.getElementById('cursor-ring');
 
@@ -359,7 +421,6 @@
     curY = e.clientY;
   });
 
-  // Magnetic hover
   const magnetics = document.querySelectorAll('[data-magnetic], [data-magnetic-card]');
   magnetics.forEach((el) => {
     el.addEventListener('mouseenter', () => document.body.classList.add('cursor-hover'));
@@ -432,7 +493,7 @@
     });
   }
 
-  // Supercharge / Warp Action Button
+  // Supercharge Action Button
   const warpBtn = document.getElementById('warp-btn');
   if (warpBtn) {
     warpBtn.addEventListener('click', () => {
@@ -479,7 +540,6 @@
   if (window.gsap && window.ScrollTrigger) {
     gsap.registerPlugin(ScrollTrigger);
 
-    // Hero -> Manifesto: sculpture gently travels toward left
     gsap.to(sculptureGroup.position, {
       scrollTrigger: {
         trigger: '#manifesto',
@@ -492,7 +552,6 @@
       z: -0.6
     });
 
-    // Manifesto -> Works: sculpture returns to right side
     gsap.to(sculptureGroup.position, {
       scrollTrigger: {
         trigger: '#works',
@@ -518,7 +577,6 @@
     const delta = clock.getDelta();
     const elapsed = clock.getElapsedTime();
 
-    // FPS Counter
     frameCount++;
     const now = performance.now();
     if (now - lastTime >= 1000) {
@@ -527,31 +585,24 @@
       lastTime = now;
     }
 
-    // Smooth Mouse Interpolation
     state.mouse.x += (state.mouse.targetX - state.mouse.x) * 0.05;
     state.mouse.y += (state.mouse.targetY - state.mouse.y) * 0.05;
 
-    // Update Uniforms
     shaderUniforms.uTime.value = elapsed;
     shaderUniforms.uMouse.value.set(state.mouse.x, state.mouse.y);
 
-    // Core Rotation
     const warpSpeed = state.isWarping ? 3.5 : 1.0;
     coreMesh.rotation.y += (0.006 + state.mouse.x * 0.015) * warpSpeed;
     coreMesh.rotation.x += (0.004 + state.mouse.y * 0.015) * warpSpeed;
 
-    // Rings Rotation
     ring1.rotation.z += 0.005 * warpSpeed;
     ring2.rotation.x += 0.003 * warpSpeed;
 
-    // Gentle Particle Swirl
     particleSystem.rotation.y = elapsed * 0.015;
     particleSystem.rotation.x = Math.sin(elapsed * 0.01) * 0.08;
 
-    // Render WebGL Scene
     renderer.render(scene, camera);
 
-    // Smooth Follower Cursor
     ringX += (curX - ringX) * 0.16;
     ringY += (curY - ringY) * 0.16;
     if (cursorDot) cursorDot.style.transform = `translate3d(${curX}px, ${curY}px, 0) translate(-50%, -50%)`;
@@ -560,7 +611,6 @@
 
   animate();
 
-  // --- Window Resize Handling ---
   window.addEventListener('resize', () => {
     camera.aspect = window.innerWidth / window.innerHeight;
     camera.updateProjectionMatrix();
@@ -571,7 +621,7 @@
     sculptureGroup.position.set(desktop ? 1.5 : 0, desktop ? 0.1 : 0, 0);
   });
 
-  console.log('%c AETHERIA LAB %c 3D Spatial Engine Active • Visual Comfort Mode ',
+  console.log('%c AETHERIA LAB %c Dual-Theme Engine Active (Dark & Light) ',
     'background: #38bdf8; color: #000; padding: 4px 8px; font-weight: bold; border-radius: 4px 0 0 4px;',
     'background: #08090d; color: #a78bfa; padding: 4px 8px; border-radius: 0 4px 4px 0;');
 })();
